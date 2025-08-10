@@ -1,23 +1,24 @@
 package com.trackpoint.demo.Service
 
-import com.trackpoint.demo.DTO.UsuariosDTO
+import com.trackpoint.demo.DTO.UsuariosRequestDTO
 import com.trackpoint.demo.Entity.Usuarios
 import com.trackpoint.demo.Exeptions.EmailJaExisteException
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
-    fun salvar(usuarioDTO: UsuariosDTO): Usuarios {
+    fun salvar(usuarioDTO: UsuariosRequestDTO): Usuarios {
         val usuario = Usuarios(
             id = 0,
-            nome = usuarioDTO.usuario.nome,
-            email = usuarioDTO.usuario.email,
-            senha = usuarioDTO.usuario.senha,
-            cargo = usuarioDTO.usuario.cargo,
-            ativo = usuarioDTO.usuario.ativo,
-            criadoEm = usuarioDTO.usuario.criadoEm
+            nome = usuarioDTO.nome,
+            email = usuarioDTO.email,
+            senha = usuarioDTO.senha,
+            cargo = usuarioDTO.cargo,
+            ativo = true,
+            criadoEm = LocalDateTime.now()
         )
 
         if (usuariosRepository.existsByEmail(usuario.email)) {
@@ -26,9 +27,4 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
         return usuariosRepository.save(usuario)
     }
-
-
-
-
-
 }
