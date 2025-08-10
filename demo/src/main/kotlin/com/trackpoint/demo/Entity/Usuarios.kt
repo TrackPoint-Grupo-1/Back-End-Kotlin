@@ -20,6 +20,6 @@ data class Usuarios(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val cargo: CargosEnum,
-    val ativo: Boolean,
+    var ativo: Boolean,
     val criadoEm: LocalDateTime
 )

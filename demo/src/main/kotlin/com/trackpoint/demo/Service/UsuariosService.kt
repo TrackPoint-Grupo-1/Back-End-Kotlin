@@ -27,4 +27,40 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
         return usuariosRepository.save(usuario)
     }
+
+    fun atualizar(id: Int, usuarioDTO: UsuariosRequestDTO): Usuarios {
+        val usuarioExistente = usuariosRepository.findById(id)
+            .orElseThrow { RuntimeException("Usuário não encontrado com id: $id") }
+
+        if (usuarioDTO.email != usuarioExistente.email &&
+            usuariosRepository.existsByEmail(usuarioDTO.email)
+        ) {
+            throw EmailJaExisteException("O email já está em uso.")
+        }
+
+        val usuarioAtualizado = usuarioExistente.copy(
+            nome = usuarioDTO.nome,
+            email = usuarioDTO.email,
+            senha = usuarioDTO.senha,
+            cargo = usuarioDTO.cargo,
+            ativo = usuarioExistente.ativo,
+            criadoEm = usuarioExistente.criadoEm
+        )
+
+        return usuariosRepository.save(usuarioAtualizado)
+    }
+
+    fun findById(id: Int): Usuarios? {
+        return usuariosRepository.findById(id).orElse(null)
+    }
+
+    fun findAll(): List<Usuarios> {
+        return usuariosRepository.findAll()
+    }
+
+    fun save(usuario: Usuarios): Usuarios {
+        return usuariosRepository.save(usuario)
+    }
+
+
 }
