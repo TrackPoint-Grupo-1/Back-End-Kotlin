@@ -10,6 +10,8 @@ data class UsuariosResponseDTO(
     val email: String,
     val cargo: CargosEnum,
     val ativo: Boolean,
+    val logado: Boolean,
+    val horasUltimoLogin: String,
     val criadoEm: LocalDateTime
 ) {
     constructor(usuario: Usuarios) : this(
@@ -18,6 +20,8 @@ data class UsuariosResponseDTO(
         email = usuario.email,
         cargo = usuario.cargo,
         ativo = usuario.ativo,
+        logado = usuario.logado,
+        horasUltimoLogin = usuario.horasUltimoLogin ?.toString() ?: "N/A",
         criadoEm = usuario.criadoEm
     )
 }

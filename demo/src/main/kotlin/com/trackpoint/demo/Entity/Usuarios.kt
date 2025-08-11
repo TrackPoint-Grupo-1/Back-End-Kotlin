@@ -21,5 +21,7 @@ data class Usuarios(
     @Column(nullable = false)
     val cargo: CargosEnum,
     var ativo: Boolean,
+    var logado: Boolean = false,
+    var horasUltimoLogin: LocalDateTime? = null,
     val criadoEm: LocalDateTime
 )

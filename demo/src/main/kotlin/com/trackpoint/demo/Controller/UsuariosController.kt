@@ -7,6 +7,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/usuarios")
@@ -23,6 +24,8 @@ class UsuariosController (private val usuariosService: UsuariosService){
             email = usuarioSalvo.email,
             cargo = usuarioSalvo.cargo,
             ativo = usuarioSalvo.ativo,
+            logado = usuarioSalvo.logado,
+            horasUltimoLogin = (usuarioSalvo.horasUltimoLogin ?: String).toString(),
             criadoEm = usuarioSalvo.criadoEm
         )
 
@@ -52,8 +55,10 @@ class UsuariosController (private val usuariosService: UsuariosService){
             "nome" to usuario.nome,
             "email" to usuario.email,
             "ativo" to usuario.ativo.toString(),
-            "cargo" to usuario.cargo.toString()
-        ))
+            "logado" to usuario.logado.toString(),
+            "cargo" to usuario.cargo.toString(),
+            "criadoEm" to usuario.criadoEm.toString(),
+            "horasUltimoLogin" to usuario.horasUltimoLogin.toString()))
     }
 
     @GetMapping
@@ -101,4 +106,38 @@ class UsuariosController (private val usuariosService: UsuariosService){
         usuariosService.save(usuario.copy(ativo = false)) // Soft delete
         return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deletado com sucesso"))
     }
+
+    @PatchMapping("/{id}/logar")
+    fun logarUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
+        val usuario = usuariosService.findById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
+
+        val logado = usuariosService.tentarLogin(usuario)
+
+        return if (logado) {
+            ResponseEntity.ok(mapOf("message" to "Usuário com ID $id logado com sucesso"))
+        } else {
+            ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(mapOf("message" to "Usuário com ID $id já está logado ou está inativo"))
+        }
+    }
+
+    @PatchMapping("/{id}/deslogar")
+    fun deslogarUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
+        val usuario = usuariosService.findById(id)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
+
+        if (!usuario.ativo) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(mapOf("message" to "Usuário com ID $id está inativo"))
+        }
+
+        usuario.logado = false
+        usuariosService.save(usuario)
+
+        return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deslogado com sucesso"))
+    }
+
 }

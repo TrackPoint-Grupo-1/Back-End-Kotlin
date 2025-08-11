@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import org.jetbrains.annotations.NotNull
+import java.time.LocalDateTime
 
 data class UsuariosRequestDTO(
     @field:NotBlank(message = "O nome não pode estar vazio")
@@ -22,7 +23,8 @@ data class UsuariosRequestDTO(
         message = "A senha deve conter ao menos uma letra maiúscula, uma minúscula, um número e um caractere especial"
     )
     val senha: String,
-
+    var logado : Boolean = false,
+    var horasUltimoLogin: LocalDateTime? = null,
     @field:jakarta.validation.constraints.NotNull(message = "O cargo não pode ser nulo")
     val cargo: CargosEnum
 )
