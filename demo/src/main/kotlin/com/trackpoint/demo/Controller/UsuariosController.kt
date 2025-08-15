@@ -2,6 +2,7 @@ package com.trackpoint.demo.Controller
 
 import com.trackpoint.demo.DTO.UsuariosCreateRequestDTO
 import com.trackpoint.demo.DTO.UsuariosResponseDTO
+import com.trackpoint.demo.DTO.UsuariosUpdateRequestDTO
 import com.trackpoint.demo.Service.UsuariosService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -23,14 +24,12 @@ class UsuariosController (private val usuariosService: UsuariosService){
     @PutMapping("/{id}")
     fun updateUsuario(
         @PathVariable id: Int,
-        @RequestBody @Valid usuarioDTO: UsuariosCreateRequestDTO
+        @RequestBody usuarioDTO: UsuariosUpdateRequestDTO
     ): ResponseEntity<UsuariosResponseDTO> {
         val usuarioAtualizado = usuariosService.atualizar(id, usuarioDTO)
-
-        val usuarioRetorno = UsuariosResponseDTO(usuarioAtualizado)
-
-        return ResponseEntity.ok(usuarioRetorno)
+        return ResponseEntity.ok(UsuariosResponseDTO(usuarioAtualizado))
     }
+
 
     @GetMapping("/{id}")
     fun getUsuarioById(@PathVariable id: Int): ResponseEntity<Map<String, String>> {

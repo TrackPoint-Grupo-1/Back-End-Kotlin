@@ -1,6 +1,7 @@
 package com.trackpoint.demo.Service
 
 import com.trackpoint.demo.DTO.UsuariosCreateRequestDTO
+import com.trackpoint.demo.DTO.UsuariosUpdateRequestDTO
 import com.trackpoint.demo.Entity.Usuarios
 import com.trackpoint.demo.Exeptions.EmailJaExisteException
 import com.trackpoint.demo.Repository.UsuariosRepository
@@ -30,22 +31,24 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
         return usuariosRepository.save(usuario)
     }
 
-    fun atualizar(id: Int, usuarioDTO: UsuariosCreateRequestDTO): Usuarios {
+    fun atualizar(id: Int, usuarioDTO: UsuariosUpdateRequestDTO): Usuarios {
         val usuarioExistente = usuariosRepository.findById(id)
             .orElseThrow { RuntimeException("Usuário não encontrado com id: $id") }
 
-        if (usuarioDTO.email != usuarioExistente.email &&
+        // Verifica se email novo já existe
+        if (!usuarioDTO.email.isNullOrBlank() &&
+            usuarioDTO.email != usuarioExistente.email &&
             usuariosRepository.existsByEmail(usuarioDTO.email)
         ) {
             throw EmailJaExisteException("O email já está em uso.")
         }
 
         val usuarioAtualizado = usuarioExistente.copy(
-            nome = usuarioDTO.nome,
-            email = usuarioDTO.email,
-            senha = usuarioDTO.senha,
-            cargo = usuarioDTO.cargo,
-            ativo = usuarioExistente.ativo,
+            nome = usuarioDTO.nome ?: usuarioExistente.nome,
+            email = usuarioDTO.email ?: usuarioExistente.email,
+            senha = usuarioDTO.senha ?: usuarioExistente.senha,
+            cargo = usuarioDTO.cargo ?: usuarioExistente.cargo,
+            ativo = usuarioDTO.ativo ?: usuarioExistente.ativo,
             criadoEm = usuarioExistente.criadoEm
         )
 
