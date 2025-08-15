@@ -21,7 +21,7 @@ data class UsuariosResponseDTO(
         cargo = usuario.cargo,
         ativo = usuario.ativo,
         logado = usuario.logado,
-        horasUltimoLogin = usuario.horasUltimoLogin ?.toString() ?: "N/A",
+        horasUltimoLogin = usuario.horasUltimoLogin?.toString() ?: "N/A",
         criadoEm = usuario.criadoEm
     )
 }

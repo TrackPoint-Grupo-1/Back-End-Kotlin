@@ -2,7 +2,7 @@ package com.trackpoint.demo.Exeptions.Handler
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
-import com.trackpoint.demo.Exeptions.EmailJaExisteException
+import com.trackpoint.demo.Exeptions.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -11,6 +11,8 @@ import org.springframework.web.ErrorResponse
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 data class ErrorResponse(val message: String)
 
@@ -18,6 +20,7 @@ data class ValidationErrorResponse(val message: String)
 
 @ControllerAdvice
 class GlobalExeptionHandler {
+
     @ExceptionHandler(EmailJaExisteException::class)
     fun handleEmailJaExiste(ex: EmailJaExisteException): ResponseEntity<Map<String, String>> {
         val body = mapOf("erro" to ex.message.orEmpty())
@@ -31,13 +34,15 @@ class GlobalExeptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleValidationExceptions(ex: MethodArgumentNotValidException): ResponseEntity<List<ValidationErrorResponse>> {
-        val errors = ex.bindingResult.allErrors.map { error ->
-            val fieldName = (error as? FieldError)?.field ?: "campo"
-            val message = error.defaultMessage ?: "Erro de validação"
-            ValidationErrorResponse(message = "$fieldName: $message")
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleValidationExceptions(ex: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
+        val errors = mutableMapOf<String, String>()
+        ex.bindingResult.allErrors.forEach { error ->
+            val fieldName = (error as FieldError).field
+            val errorMessage = error.defaultMessage ?: "Campo inválido"
+            errors[fieldName] = errorMessage
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors)
+        return ResponseEntity.badRequest().body(errors)
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
@@ -50,8 +55,39 @@ class GlobalExeptionHandler {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse(message))
         }
 
-        // Caso não seja esse erro específico, retorna mensagem genérica
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse("JSON inválido ou mal formatado."))
+    }
+
+    @ExceptionHandler(UsuarioNotFoundException::class)
+    fun handleUsuarioNotFound(ex: UsuarioNotFoundException): ResponseEntity<com.trackpoint.demo.Exeptions.Handler.ErrorResponse> {
+        val error = ErrorResponse(ex.message ?: "Usuário não encontrado")
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error)
+    }
+
+    @ExceptionHandler(NenhumaHoraExtraEncontradaException::class)
+    fun handleNenhumaHoraExtraEncontrada(ex: NenhumaHoraExtraEncontradaException): ResponseEntity<Map<String, String>> {
+        val body = mapOf("mensagem" to ex.message.orEmpty())
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body)
+    }
+
+    @ExceptionHandler(DataInvalidaException::class)
+    fun handleDataInvalida(ex: DataInvalidaException): ResponseEntity<Map<String, String>> {
+        val body = mapOf("erro" to ex.message.orEmpty())
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body)
+    }
+
+    @ExceptionHandler(InvalidDateFormatException::class)
+    fun handleInvalidDate(ex: InvalidDateFormatException): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("mensagem" to ex.message.orEmpty()))
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<Map<String, String>> {
+        val paramName = ex.name
+        val value = ex.value
+        val requiredType = ex.requiredType?.simpleName ?: "tipo desconhecido"
+        val message = "Valor inválido '$value' para o parâmetro '$paramName'. Esperado tipo: $requiredType."
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("mensagem" to message))
     }
 
 }

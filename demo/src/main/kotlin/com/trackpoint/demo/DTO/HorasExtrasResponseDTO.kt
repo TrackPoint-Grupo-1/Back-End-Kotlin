@@ -1,15 +1,17 @@
 package com.trackpoint.demo.DTO
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.trackpoint.demo.Entity.HorasExtras
 import java.time.LocalDate
 
 data class HorasExtrasResponseDTO(
     val id: Int,
     val usuarioId: Int,
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     val data: LocalDate,
     val horas: Double,
     val motivo: String,
-    val status: Boolean,
+    val foiSolicitado: Boolean,
     val criadoEm: LocalDate
 ) {
     constructor(horasExtras: HorasExtras) : this(
@@ -18,7 +20,7 @@ data class HorasExtrasResponseDTO(
         data = horasExtras.data,
         horas = horasExtras.horas,
         motivo = horasExtras.motivo,
-        status = horasExtras.status,
+        foiSolicitado = horasExtras.foiSolicitada,
         criadoEm = horasExtras.criadoEm
     )
 }

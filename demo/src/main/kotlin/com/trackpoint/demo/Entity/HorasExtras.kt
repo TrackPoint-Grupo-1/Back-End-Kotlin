@@ -13,7 +13,8 @@ data class HorasExtras(
     val usuario: Usuarios,
     val data: LocalDate,
     val horas: Double,
+    @Column(nullable = false)
     val motivo: String,
-    val status: Boolean,
+    val foiSolicitada: Boolean,
     val criadoEm: LocalDate = LocalDate.now()
 )

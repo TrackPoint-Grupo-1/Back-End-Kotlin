@@ -1,6 +1,6 @@
 package com.trackpoint.demo.Service
 
-import com.trackpoint.demo.DTO.UsuariosRequestDTO
+import com.trackpoint.demo.DTO.UsuariosCreateRequestDTO
 import com.trackpoint.demo.Entity.Usuarios
 import com.trackpoint.demo.Exeptions.EmailJaExisteException
 import com.trackpoint.demo.Repository.UsuariosRepository
@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @Service
 class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
-    fun salvar(usuarioDTO: UsuariosRequestDTO): Usuarios {
+    fun salvar(usuarioDTO: UsuariosCreateRequestDTO): Usuarios {
         val usuario = Usuarios(
             id = 0,
             nome = usuarioDTO.nome,
@@ -30,7 +30,7 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
         return usuariosRepository.save(usuario)
     }
 
-    fun atualizar(id: Int, usuarioDTO: UsuariosRequestDTO): Usuarios {
+    fun atualizar(id: Int, usuarioDTO: UsuariosCreateRequestDTO): Usuarios {
         val usuarioExistente = usuariosRepository.findById(id)
             .orElseThrow { RuntimeException("Usuário não encontrado com id: $id") }
 

@@ -5,10 +5,9 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import org.jetbrains.annotations.NotNull
 import java.time.LocalDateTime
 
-data class UsuariosRequestDTO(
+data class UsuariosCreateRequestDTO(
     @field:NotBlank(message = "O nome não pode estar vazio")
     val nome: String,
 
