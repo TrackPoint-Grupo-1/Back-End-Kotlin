@@ -101,8 +101,31 @@ class GlobalExeptionHandler {
         val body = mapOf(
             "erro" to ex.message.orEmpty()
         )
-        return ResponseEntity(body, HttpStatus.BAD_REQUEST) // 400
+        return ResponseEntity(body, HttpStatus.BAD_REQUEST)
     }
 
+    @ExceptionHandler(NenhumaSolicitacaoEncontradaException::class)
+    fun handleNenhumaSolicitacaoEncontradaException(
+        ex: NenhumaSolicitacaoEncontradaException
+    ): ResponseEntity<Map<String, String>> {
+        val body = mapOf("mensagem" to ex.message.orEmpty())
+        return ResponseEntity(body, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(StatusSolicitacaoInvalidoException::class)
+    fun handleStatusInvalido(ex: StatusSolicitacaoInvalidoException): ResponseEntity<com.trackpoint.demo.Exeptions.Handler.ErrorResponse> {
+        val response = ErrorResponse(
+            message = ex.message ?: "Status inválido"
+        )
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
+    }
+
+    @ExceptionHandler(StatusNaoAtualizavelException::class)
+    fun handleStatusNaoAtualizavel(ex: StatusNaoAtualizavelException): ResponseEntity<Map<String, String>> {
+        val body = mapOf(
+            "error" to ex.message.orEmpty()
+        )
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body)
+    }
 
 }
