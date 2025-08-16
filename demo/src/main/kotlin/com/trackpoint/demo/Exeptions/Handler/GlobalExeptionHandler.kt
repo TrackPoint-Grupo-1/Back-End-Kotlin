@@ -90,4 +90,19 @@ class GlobalExeptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("mensagem" to message))
     }
 
+    @ExceptionHandler(DiferencaAlmocoInvalidaException::class)
+    fun handleDiferencaAlmoco(ex: DiferencaAlmocoInvalidaException): ResponseEntity<Map<String, String>> {
+        val body = mapOf("erro" to ex.message.orEmpty())
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body)
+    }
+
+    @ExceptionHandler(PontoInvalidoException::class)
+    fun handlePontoInvalidoException(ex: PontoInvalidoException): ResponseEntity<Map<String, String>> {
+        val body = mapOf(
+            "erro" to ex.message.orEmpty()
+        )
+        return ResponseEntity(body, HttpStatus.BAD_REQUEST) // 400
+    }
+
+
 }
