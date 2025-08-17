@@ -25,6 +25,16 @@ class SolicitarAjusteService(
             throw InvalidDateFormatException("Não é permitido criar solicitação para data futura")
         }
 
+        val inicioDoMes = LocalDate.now().withDayOfMonth(1).atStartOfDay()
+        val fimDoMes = inicioDoMes.plusMonths(1).minusNanos(1) // ⬅️ usei minusNanos pra precisão
+
+        val totalSolicitacoes = solicitarAjusteRepository
+            .countByUsuarioIdAndCriadoEmBetween(usuario.id, inicioDoMes, fimDoMes)
+
+        if (totalSolicitacoes >= 5) {
+            throw RegraDeNegocioException("O limite máximo de 5 solicitações por mês já foi atingido.")
+        }
+
         val solicitacao = SolicitarAjuste(
             usuario = usuario,
             data = request.data,
@@ -37,7 +47,6 @@ class SolicitarAjusteService(
 
         return SolicitarAjusteResponseDTO.fromEntity(solicitarAjusteRepository.save(solicitacao))
     }
-
 
     fun listarSolicitacoesPorUsuario(usuarioId: Int): List<SolicitarAjusteResponseDTO> {
         return solicitarAjusteRepository.findByUsuarioId(usuarioId)

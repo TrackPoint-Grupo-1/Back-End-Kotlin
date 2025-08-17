@@ -128,4 +128,20 @@ class GlobalExeptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body)
     }
 
+    @ExceptionHandler(PontosNaoEncontradosException::class)
+    fun handlePontosNaoEncontradosException(ex: PontosNaoEncontradosException): ResponseEntity<Map<String, String>> {
+        val body = mapOf(
+            "mensagem" to ex.message.orEmpty()
+        )
+        return ResponseEntity(body, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(RegraDeNegocioException::class)
+    fun handleRegraDeNegocioException(ex: RegraDeNegocioException): ResponseEntity<Map<String, String>> {
+        val body = mapOf(
+            "mensagem" to ex.message.orEmpty()
+        )
+        return ResponseEntity(body, HttpStatus.BAD_REQUEST)
+    }
+
 }
