@@ -3,6 +3,7 @@ package com.trackpoint.demo.Repository
 import com.trackpoint.demo.Entity.Pontos
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Repository
@@ -14,4 +15,6 @@ interface PontosRepository : JpaRepository<Pontos, Int>{
         inicio: LocalDateTime,
         fim: LocalDateTime
     ): List<Pontos>
+
+
 }

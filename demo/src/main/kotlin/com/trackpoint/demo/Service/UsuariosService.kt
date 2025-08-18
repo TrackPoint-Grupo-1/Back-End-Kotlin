@@ -21,7 +21,8 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
             senha = usuarioDTO.senha,
             cargo = usuarioDTO.cargo,
             ativo = true,
-            criadoEm = LocalDateTime.now()
+            criadoEm = LocalDateTime.now(),
+            jornada = usuarioDTO.jornada
         )
 
         if (usuariosRepository.existsByEmail(usuario.email)) {
@@ -35,7 +36,6 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
         val usuarioExistente = usuariosRepository.findById(id)
             .orElseThrow { RuntimeException("Usuário não encontrado com id: $id") }
 
-        // Verifica se email novo já existe
         if (!usuarioDTO.email.isNullOrBlank() &&
             usuarioDTO.email != usuarioExistente.email &&
             usuariosRepository.existsByEmail(usuarioDTO.email)
@@ -65,25 +65,6 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
     fun save(usuario: Usuarios): Usuarios {
         return usuariosRepository.save(usuario)
-    }
-
-    @Scheduled(fixedRate = 18_000_000) // 5 horas
-    fun deslogarUsuarioDepoisDeDezHoras() {
-        val agora = LocalDateTime.now()
-        val usuariosLogados = usuariosRepository.findByLogadoTrue()
-
-        usuariosLogados.forEach { usuario ->
-            usuario.horasUltimoLogin?.let {
-                val horasDesdeLogin = Duration.between(it, agora).toHours()
-                if (horasDesdeLogin >= 10) {
-                    usuario.logado = false
-                    usuariosRepository.save(usuario)
-                    println("""
-                        LOGGER: Usuário ${usuario.id} deslogado após $horasDesdeLogin horas.
-                    """.trimIndent())
-                }
-            }
-        }
     }
 
     fun tentarLogin(usuario: Usuarios): Boolean {

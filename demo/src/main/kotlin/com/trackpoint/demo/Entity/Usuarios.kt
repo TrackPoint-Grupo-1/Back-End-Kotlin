@@ -23,5 +23,6 @@ data class Usuarios(
     var ativo: Boolean,
     var logado: Boolean = false,
     var horasUltimoLogin: LocalDateTime? = null,
+    var jornada: Double,
     val criadoEm: LocalDateTime
 )

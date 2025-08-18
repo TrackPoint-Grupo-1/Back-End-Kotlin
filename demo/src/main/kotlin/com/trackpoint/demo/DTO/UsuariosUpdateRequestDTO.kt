@@ -7,5 +7,6 @@ data class UsuariosUpdateRequestDTO(
     val email: String?,
     val senha: String?,
     val cargo: CargosEnum?,
-    val ativo: Boolean?
+    val ativo: Boolean?,
+    val jornada: Double?
 )

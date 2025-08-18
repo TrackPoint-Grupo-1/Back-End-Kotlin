@@ -22,8 +22,10 @@ data class UsuariosCreateRequestDTO(
         message = "A senha deve conter ao menos uma letra maiúscula, uma minúscula, um número e um caractere especial"
     )
     val senha: String,
-    var logado : Boolean = false,
-    var horasUltimoLogin: LocalDateTime? = null,
+
     @field:jakarta.validation.constraints.NotNull(message = "O cargo não pode ser nulo")
-    val cargo: CargosEnum
+    val cargo: CargosEnum,
+
+    @field:jakarta.validation.constraints.NotNull(message = "A jornada não pode ser nula")
+    var jornada: Double
 )

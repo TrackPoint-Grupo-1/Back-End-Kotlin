@@ -16,4 +16,5 @@ interface HorasExtrasRepository : JpaRepository<HorasExtras, Int>{
         dataFim: LocalDate,
         foiSolicitada: Boolean
     ): List<HorasExtras>
+    fun findByUsuarioIdAndData(usuarioId: Int, data: LocalDate): HorasExtras?
 }

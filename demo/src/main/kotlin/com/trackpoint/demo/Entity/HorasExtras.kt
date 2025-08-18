@@ -12,9 +12,9 @@ data class HorasExtras(
     @JoinColumn(name = "usuario_id")
     val usuario: Usuarios,
     val data: LocalDate,
-    val horas: Double,
+    var horas: Double,
     @Column(nullable = false)
-    val motivo: String,
-    val foiSolicitada: Boolean,
+    var motivo: String,
+    var foiSolicitada: Boolean,
     val criadoEm: LocalDate = LocalDate.now()
 )

@@ -45,6 +45,7 @@ class UsuariosController (private val usuariosService: UsuariosService){
             "logado" to usuario.logado.toString(),
             "cargo" to usuario.cargo.toString(),
             "criadoEm" to usuario.criadoEm.toString(),
+            "jornada" to usuario.jornada.toString(),
             "horasUltimoLogin" to usuario.horasUltimoLogin.toString()))
     }
 
