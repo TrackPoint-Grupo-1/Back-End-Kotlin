@@ -9,5 +9,6 @@ data class HorasExtrasUpdateRequestDTO(
     val data: LocalDate?,
     val horas: Double?,
     val motivo: String?,
-    val foiSolicitado: Boolean?
+    val foiSolicitado: Boolean?,
+    val foiFeita: Boolean?
 )

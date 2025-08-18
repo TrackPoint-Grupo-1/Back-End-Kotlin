@@ -144,4 +144,32 @@ class GlobalExeptionHandler {
         return ResponseEntity(body, HttpStatus.BAD_REQUEST)
     }
 
+    @ExceptionHandler(GerenteInvalidoException::class)
+    fun handleGerenteInvalidoException(ex: GerenteInvalidoException): ResponseEntity<com.trackpoint.demo.Exeptions.Handler.ErrorResponse> {
+        val response = ErrorResponse(
+            message = ex.message ?: "Todos os gerentes informados devem ter cargo de GERENTE"
+        )
+        return ResponseEntity(response, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(GerenteComoUsuarioException::class)
+    fun handleGerenteComoUsuarioException(ex: GerenteComoUsuarioException): ResponseEntity<com.trackpoint.demo.Exeptions.Handler.ErrorResponse> {
+        val response = ErrorResponse(
+            message = ex.message ?: "Erro ao cadastrar projeto"
+        )
+        return ResponseEntity(response, HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(ProjetoNomeDuplicadoException::class)
+    fun handleProjetoNomeDuplicadoException(ex: ProjetoNomeDuplicadoException): ResponseEntity<Map<String, String>> {
+        val response = mapOf("mensagem" to ex.message.orEmpty())
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
+    }
+
+    @ExceptionHandler(ProjetoNaoEncontradoException::class)
+    fun handleProjetoNaoEncontradoException(ex: ProjetoNaoEncontradoException): ResponseEntity<Map<String, String>> {
+        val response = mapOf("mensagem" to ex.message.orEmpty())
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
+    }
+
 }

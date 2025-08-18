@@ -99,7 +99,8 @@ class HorasExtrasService(
                         data = data,
                         horas = horasIndevidas,
                         motivo = "",
-                        foiSolicitada = false
+                        foiSolicitada = false,
+                        foiFeita = true
                     )
                     horasExtrasRepository.save(indevida)
                 } else {

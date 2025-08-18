@@ -12,6 +12,7 @@ data class HorasExtrasResponseDTO(
     val horas: Double,
     val motivo: String,
     val foiSolicitado: Boolean,
+    val foiFeita: Boolean,
     val criadoEm: LocalDate
 ) {
     constructor(horasExtras: HorasExtras) : this(
@@ -21,6 +22,7 @@ data class HorasExtrasResponseDTO(
         horas = horasExtras.horas,
         motivo = horasExtras.motivo,
         foiSolicitado = horasExtras.foiSolicitada,
+        foiFeita = horasExtras.foiFeita,
         criadoEm = horasExtras.criadoEm
     )
 }

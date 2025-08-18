@@ -16,5 +16,6 @@ data class HorasExtras(
     @Column(nullable = false)
     var motivo: String,
     var foiSolicitada: Boolean,
+    var foiFeita: Boolean = false,
     val criadoEm: LocalDate = LocalDate.now()
 )
