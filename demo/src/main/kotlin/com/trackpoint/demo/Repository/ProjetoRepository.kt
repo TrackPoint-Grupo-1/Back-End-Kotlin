@@ -8,4 +8,10 @@ import org.springframework.stereotype.Repository
 interface ProjetoRepository : JpaRepository<Projeto, Int> {
 
     fun existsByNome(nome: String): Boolean
+
+    fun findByNomeContainingIgnoreCase(nome: String): List<Projeto>
+
+    fun findByUsuarios_NomeContainingIgnoreCase(nome: String): List<Projeto>
+    fun findByGerentes_NomeContainingIgnoreCase(nome: String): List<Projeto>
+
 }

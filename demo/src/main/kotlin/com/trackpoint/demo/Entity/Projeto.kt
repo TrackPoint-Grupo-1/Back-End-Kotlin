@@ -35,6 +35,6 @@ class Projeto(
     @field:NotNull(message = "A previsão de entrega é obrigatória")
     val previsaoEntrega: LocalDate,
     @Enumerated(EnumType.STRING)
-    val status : StatusProjeto,
+    var status : StatusProjeto,
     val criadoEm: LocalDateTime = LocalDateTime.now()
 )

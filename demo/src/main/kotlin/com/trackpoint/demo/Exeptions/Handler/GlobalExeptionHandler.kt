@@ -172,4 +172,20 @@ class GlobalExeptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
     }
 
+    @ExceptionHandler(FuncionarioNaoEncontradoException::class)
+    fun handleFuncionarioNaoEncontrado(ex: FuncionarioNaoEncontradoException): ResponseEntity<com.trackpoint.demo.Exeptions.Handler.ErrorResponse> {
+        val errorResponse = ErrorResponse(
+            message = ex.message ?: "Funcionário não encontrado"
+        )
+        return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
+    }
+
+    @ExceptionHandler(StatusInvalidoException::class)
+    fun handleStatusInvalidoException(ex: StatusInvalidoException): ResponseEntity<Map<String, String>> {
+        val body = mapOf(
+            "mensagem" to ex.message.orEmpty()
+        )
+        return ResponseEntity(body, HttpStatus.BAD_REQUEST)
+    }
+
 }

@@ -5,10 +5,7 @@ import com.trackpoint.demo.DTO.ProjetoResponseDTO
 import com.trackpoint.demo.Entity.Projeto
 import com.trackpoint.demo.Enum.CargosEnum
 import com.trackpoint.demo.Enum.StatusProjeto
-import com.trackpoint.demo.Exeptions.GerenteComoUsuarioException
-import com.trackpoint.demo.Exeptions.GerenteInvalidoException
-import com.trackpoint.demo.Exeptions.ProjetoNaoEncontradoException
-import com.trackpoint.demo.Exeptions.ProjetoNomeDuplicadoException
+import com.trackpoint.demo.Exeptions.*
 import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
@@ -60,5 +57,42 @@ class ProjetoService(
         val projeto = projetoRepository.findById(id)
             .orElseThrow { ProjetoNaoEncontradoException("Projeto com ID $id não encontrado") }
         return ProjetoResponseDTO.fromEntity(projeto)
+    }
+
+    fun buscarProjetoPorNome( nome: String): List<ProjetoResponseDTO> {
+        val projetos = projetoRepository.findByNomeContainingIgnoreCase(nome)
+        if (projetos.isEmpty()) {
+            throw ProjetoNaoEncontradoException("Nenhum projeto encontrado com o nome '$nome'")
+        }
+        return projetos.map { ProjetoResponseDTO.fromEntity(it) }
+    }
+
+    fun buscarProjetosPorFuncionario(nome: String): List<Projeto> {
+        val projetosUsuarios = projetoRepository.findByUsuarios_NomeContainingIgnoreCase(nome)
+        val projetosGerente = projetoRepository.findByGerentes_NomeContainingIgnoreCase(nome)
+
+        val projetos = (projetosUsuarios + projetosGerente).distinct()
+
+        if (projetos.isEmpty()) {
+            throw FuncionarioNaoEncontradoException("Nenhum projeto encontrado para o funcionário/gerente com nome: $nome")
+        }
+
+        return projetos
+    }
+
+    fun atualizarStatusProjeto(id: Int, novoStatus: String): ProjetoResponseDTO {
+        val statusValido = try {
+            StatusProjeto.valueOf(novoStatus.uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw StatusInvalidoException("Status '$novoStatus' inválido. Valores permitidos: ${StatusProjeto.entries.joinToString()}")
+        }
+
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com ID $id não encontrado") }
+
+        projeto.status = statusValido
+
+        val projetoAtualizado = projetoRepository.save(projeto)
+        return ProjetoResponseDTO.fromEntity(projetoAtualizado)
     }
 }
