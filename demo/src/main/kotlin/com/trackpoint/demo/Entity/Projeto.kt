@@ -33,7 +33,7 @@ class Projeto(
     )
     val usuarios: MutableList<Usuarios> = mutableListOf(),
     @field:NotNull(message = "A previsão de entrega é obrigatória")
-    val previsaoEntrega: LocalDate,
+    var previsaoEntrega: LocalDate,
     @Enumerated(EnumType.STRING)
     var status : StatusProjeto,
     val criadoEm: LocalDateTime = LocalDateTime.now()

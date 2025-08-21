@@ -3,6 +3,9 @@ package com.trackpoint.demo.Controller
 import com.trackpoint.demo.DTO.ProjetoCreateRequestDTO
 import com.trackpoint.demo.DTO.ProjetoResponseDTO
 import com.trackpoint.demo.Entity.Projeto
+import com.trackpoint.demo.Enum.StatusProjeto
+import com.trackpoint.demo.Exeptions.ProjetoNaoEncontradoException
+import com.trackpoint.demo.Exeptions.StatusInvalidoException
 import com.trackpoint.demo.Service.ProjetoService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -55,4 +58,19 @@ class ProjetoController(
         val projetoAtualizado = projetoService.atualizarStatusProjeto(id, novoStatus)
         return ResponseEntity.ok(projetoAtualizado)
     }
+
+    @GetMapping("/status")
+    fun buscarProjetosPorStatus(@RequestParam status: String): List<ProjetoResponseDTO> {
+        return projetoService.buscarProjetosPorStatus(status)
+    }
+
+    @PutMapping("/{id}/atualizar-previsao-entrega")
+    fun atualizarPrevisaoEntrega(
+        @PathVariable id: Int,
+        @RequestParam novaPrevisao: String
+    ): ResponseEntity<ProjetoResponseDTO> {
+        val projetoAtualizado = projetoService.atualizarPrevisaoEntrega(id, novaPrevisao)
+        return ResponseEntity.ok(projetoAtualizado)
+    }
+
 }

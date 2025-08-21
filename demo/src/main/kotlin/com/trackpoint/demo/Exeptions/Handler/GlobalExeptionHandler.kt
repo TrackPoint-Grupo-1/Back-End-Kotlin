@@ -188,4 +188,11 @@ class GlobalExeptionHandler {
         return ResponseEntity(body, HttpStatus.BAD_REQUEST)
     }
 
+    @ExceptionHandler(StatusIgualException::class)
+    fun handleStatusJaAtribuido(ex: StatusIgualException): ResponseEntity<Map<String, String>> {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(mapOf("erro" to ex.message!!))
+    }
+
 }

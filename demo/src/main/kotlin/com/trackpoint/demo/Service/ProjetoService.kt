@@ -8,8 +8,12 @@ import com.trackpoint.demo.Enum.StatusProjeto
 import com.trackpoint.demo.Exeptions.*
 import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @Service
 class ProjetoService(
@@ -84,15 +88,67 @@ class ProjetoService(
         val statusValido = try {
             StatusProjeto.valueOf(novoStatus.uppercase())
         } catch (e: IllegalArgumentException) {
-            throw StatusInvalidoException("Status '$novoStatus' inválido. Valores permitidos: ${StatusProjeto.entries.joinToString()}")
+            throw StatusInvalidoException(
+                "Status '$novoStatus' inválido. Valores permitidos: ${StatusProjeto.entries.joinToString()}"
+            )
         }
 
         val projeto = projetoRepository.findById(id)
             .orElseThrow { ProjetoNaoEncontradoException("Projeto com ID $id não encontrado") }
+
+        if (projeto.status == statusValido) {
+            throw StatusIgualException("O projeto já está com o status '${projeto.status}'.")
+        }
 
         projeto.status = statusValido
 
         val projetoAtualizado = projetoRepository.save(projeto)
         return ProjetoResponseDTO.fromEntity(projetoAtualizado)
     }
+
+    fun buscarProjetosPorStatus(status: String): List<ProjetoResponseDTO> {
+        val statusEnum = try {
+            StatusProjeto.valueOf(status.uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw StatusInvalidoException("Status '$status' informado é inválido.")
+        }
+
+        val projetos = projetoRepository.findByStatus(statusEnum)
+
+        if (projetos.isEmpty()) {
+            throw ProjetoNaoEncontradoException("Nenhum projeto encontrado com status '$statusEnum'")
+        }
+
+        return projetos.map { ProjetoResponseDTO.fromEntity(it) }
+    }
+
+    fun atualizarPrevisaoEntrega(id: Int, novaPrevisao: String): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        val dataConvertida = converterData(novaPrevisao)
+
+        if (dataConvertida == projeto.previsaoEntrega) {
+            throw DataInvalidaException("A nova data deve ser diferente da data atual de previsão de entrega")
+        }
+
+        if (dataConvertida.isBefore(LocalDate.now())) {
+            throw DataInvalidaException("A nova data deve ser posterior ao dia de hoje")
+        }
+
+        projeto.previsaoEntrega = dataConvertida
+        projetoRepository.save(projeto)
+
+        return ProjetoResponseDTO.fromEntity(projeto)
+    }
+
+    private fun converterData(data: String): LocalDate {
+        return try {
+            val formatoEntrada = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+            LocalDate.parse(data, formatoEntrada)
+        } catch (e: Exception) {
+            throw DataInvalidaException("Data inválida! Use o formato dd-MM-yyyy")
+        }
+    }
+
 }

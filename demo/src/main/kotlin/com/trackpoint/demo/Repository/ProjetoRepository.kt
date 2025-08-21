@@ -1,6 +1,7 @@
 package com.trackpoint.demo.Repository
 
 import com.trackpoint.demo.Entity.Projeto
+import com.trackpoint.demo.Enum.StatusProjeto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
@@ -13,5 +14,7 @@ interface ProjetoRepository : JpaRepository<Projeto, Int> {
 
     fun findByUsuarios_NomeContainingIgnoreCase(nome: String): List<Projeto>
     fun findByGerentes_NomeContainingIgnoreCase(nome: String): List<Projeto>
+
+    fun findByStatus(status: StatusProjeto): List<Projeto>
 
 }
