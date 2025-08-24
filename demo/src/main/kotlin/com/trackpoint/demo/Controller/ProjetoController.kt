@@ -1,10 +1,13 @@
 package com.trackpoint.demo.Controller
 
+import com.trackpoint.demo.DTO.AdicionarPessoasRequestDTO
 import com.trackpoint.demo.DTO.ProjetoCreateRequestDTO
 import com.trackpoint.demo.DTO.ProjetoResponseDTO
+import com.trackpoint.demo.DTO.UsuariosResponseDTO
 import com.trackpoint.demo.Entity.Projeto
 import com.trackpoint.demo.Enum.StatusProjeto
 import com.trackpoint.demo.Exeptions.ProjetoNaoEncontradoException
+import com.trackpoint.demo.Exeptions.RegraDeNegocioException
 import com.trackpoint.demo.Exeptions.StatusInvalidoException
 import com.trackpoint.demo.Service.ProjetoService
 import jakarta.validation.Valid
@@ -73,6 +76,43 @@ class ProjetoController(
         return ResponseEntity.ok(projetoAtualizado)
     }
 
-    //TENHO Q ADICIONAR UM USUARIO A UM PROJETO
+    @PutMapping("/{id}/adicionar-pessoas/{tipo}")
+    fun adicionarPessoasAoProjeto(
+        @PathVariable id: Int,
+        @PathVariable tipo: String,
+        @RequestBody request: List<Int>
+    ): ResponseEntity<ProjetoResponseDTO> {
+        val projetoAtualizado = when (tipo.lowercase()) {
+            "gerente" -> projetoService.adicionarGerentesAoProjeto(id, request)
+            "usuario" -> projetoService.adicionarUsuariosAoProjeto(id, request)
+            else -> throw RegraDeNegocioException("Tipo inválido: $tipo. Use 'gerente' ou 'usuario'.")
+        }
+
+        return ResponseEntity.ok(projetoAtualizado)
+    }
+
+    @DeleteMapping("/{id}/remover-pessoas/{tipo}")
+    fun removerPessoasDoProjeto(
+        @PathVariable id: Int,
+        @PathVariable tipo: String,
+        @RequestBody request: List<Int>
+    ): ResponseEntity<ProjetoResponseDTO> {
+        val projetoAtualizado = when (tipo.lowercase()) {
+            "gerente" -> projetoService.removerGerentesDoProjeto(id, request)
+            "usuario" -> projetoService.removerUsuariosDoProjeto(id, request)
+            else -> throw RegraDeNegocioException("Tipo inválido: $tipo. Use 'gerente' ou 'usuario'.")
+        }
+
+        return ResponseEntity.ok(projetoAtualizado)
+    }
+
+    @GetMapping("/{id}/usuarios")
+    fun listarUsuariosDoProjeto(@PathVariable id: Int): ResponseEntity<List<UsuariosResponseDTO>> {
+        val usuarios = projetoService.listarUsuariosDoProjeto(id)
+        return ResponseEntity.ok(usuarios)
+    }
+
+
+
 
 }

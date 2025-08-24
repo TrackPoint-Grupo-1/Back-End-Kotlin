@@ -1,7 +1,9 @@
 package com.trackpoint.demo.Service
 
+import com.trackpoint.demo.DTO.AdicionarPessoasRequestDTO
 import com.trackpoint.demo.DTO.ProjetoCreateRequestDTO
 import com.trackpoint.demo.DTO.ProjetoResponseDTO
+import com.trackpoint.demo.DTO.UsuariosResponseDTO
 import com.trackpoint.demo.Entity.Projeto
 import com.trackpoint.demo.Enum.CargosEnum
 import com.trackpoint.demo.Enum.StatusProjeto
@@ -149,6 +151,133 @@ class ProjetoService(
         } catch (e: Exception) {
             throw DataInvalidaException("Data inválida! Use o formato dd-MM-yyyy")
         }
+    }
+
+    fun adicionarPessoasAoProjeto(id: Int, request: AdicionarPessoasRequestDTO): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        request.gerentesIds.forEach { gerenteId ->
+            val gerente = usuarioRepository.findById(gerenteId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $gerenteId não encontrado") }
+
+            if (gerente.cargo != CargosEnum.GERENTE) {
+                throw RegraDeNegocioException("Usuário com id $gerenteId não é um gerente válido")
+            }
+
+            if (projeto.gerentes.contains(gerente)) {
+                throw RegraDeNegocioException("Gerente com id $gerenteId já está vinculado ao projeto")
+            }
+
+            projeto.gerentes.add(gerente)
+        }
+
+        request.usuariosIds.forEach { usuarioId ->
+            val usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $usuarioId não encontrado") }
+
+            if (projeto.usuarios.contains(usuario)) {
+                throw RegraDeNegocioException("Usuário com id $usuarioId já está vinculado ao projeto")
+            }
+
+            projeto.usuarios.add(usuario)
+        }
+
+        val projetoSalvo = projetoRepository.save(projeto)
+        return ProjetoResponseDTO.fromEntity(projetoSalvo)
+    }
+
+    fun adicionarUsuariosAoProjeto(id: Int, usuariosIds: List<Int>): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        usuariosIds.forEach { usuarioId ->
+            val usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $usuarioId não encontrado") }
+
+            if (projeto.gerentes.contains(usuario)) {
+                projeto.gerentes.remove(usuario)
+            }
+
+            if (projeto.usuarios.contains(usuario)) {
+                throw RegraDeNegocioException("Usuário com id $usuarioId já está vinculado como usuário no projeto")
+            }
+
+            projeto.usuarios.add(usuario)
+        }
+
+        return ProjetoResponseDTO.fromEntity(projetoRepository.save(projeto))
+    }
+
+    fun adicionarGerentesAoProjeto(id: Int, gerentesIds: List<Int>): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        gerentesIds.forEach { gerenteId ->
+            val gerente = usuarioRepository.findById(gerenteId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $gerenteId não encontrado") }
+
+            if (gerente.cargo != CargosEnum.GERENTE) {
+                throw RegraDeNegocioException("Usuário com id $gerenteId não é um gerente válido")
+            }
+
+            if (projeto.usuarios.contains(gerente)) {
+                projeto.usuarios.remove(gerente)
+            }
+
+            if (projeto.gerentes.contains(gerente)) {
+                throw RegraDeNegocioException("Gerente com id $gerenteId já está vinculado como gerente no projeto")
+            }
+
+            projeto.gerentes.add(gerente)
+        }
+
+        return ProjetoResponseDTO.fromEntity(projetoRepository.save(projeto))
+    }
+
+    fun removerUsuariosDoProjeto(id: Int, usuariosIds: List<Int>): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        usuariosIds.forEach { usuarioId ->
+            val usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $usuarioId não encontrado") }
+
+            if (!projeto.usuarios.contains(usuario)) {
+                throw RegraDeNegocioException("Usuário com id $usuarioId não está vinculado ao projeto como usuário")
+            }
+
+            projeto.usuarios.remove(usuario)
+        }
+
+        return ProjetoResponseDTO.fromEntity(projetoRepository.save(projeto))
+    }
+
+    fun removerGerentesDoProjeto(id: Int, gerentesIds: List<Int>): ProjetoResponseDTO {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        gerentesIds.forEach { gerenteId ->
+            val gerente = usuarioRepository.findById(gerenteId)
+                .orElseThrow { UsuarioNotFoundException("Usuário com id $gerenteId não encontrado") }
+
+            if (!projeto.gerentes.contains(gerente)) {
+                throw RegraDeNegocioException("Usuário com id $gerenteId não está vinculado ao projeto como gerente")
+            }
+
+            projeto.gerentes.remove(gerente)
+        }
+
+        return ProjetoResponseDTO.fromEntity(projetoRepository.save(projeto))
+    }
+
+    fun listarUsuariosDoProjeto(id: Int): List<UsuariosResponseDTO> {
+        val projeto = projetoRepository.findById(id)
+            .orElseThrow { ProjetoNaoEncontradoException("Projeto com id $id não encontrado") }
+
+        val todosUsuarios = projeto.gerentes + projeto.usuarios
+
+        return todosUsuarios.map { UsuariosResponseDTO.fromEntity(it) }
     }
 
 }
