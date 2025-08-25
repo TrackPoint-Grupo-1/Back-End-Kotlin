@@ -11,17 +11,19 @@ class DeslogarUsuarioScheduler (
     private val usuariosRepository: UsuariosRepository
  ){
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(fixedRate = 36000000)
     fun deslogarUsuarioAutomaticamente() {
-        println("""
-            ***
-            ***
-            ***
-            Iniciando verificação de usuários logados para deslogar às 00:00 horas: ${LocalDateTime.now()}
-            ***
-            ***
-            ***
-        """.trimIndent())
+        println(
+            """
+            ╔═══════════════════════════════════════════════════════════════════╗
+            ║                                                                   ║
+            ║   🚀🚀🚀 INICIANDO VERIFICAÇÃO DE USUÁRIOS LOGADOS 🚀🚀🚀        ║
+            ║       PARA DESLOGAR                                               ║
+            ║       HORÁRIO: ${LocalDateTime.now()}                             ║
+            ║                                                                   ║
+            ╚═══════════════════════════════════════════════════════════════════╝
+            """.trimIndent()
+        )
         val agora = LocalDateTime.now()
         val usuariosLogados = usuariosRepository.findByLogadoTrue()
 
@@ -31,15 +33,17 @@ class DeslogarUsuarioScheduler (
                 if (horasDesdeLogin >= 10) {
                     usuario.logado = false
                     usuariosRepository.save(usuario)
-                    println("""
-                        ***
-                        ***
-                        ***
-                        Usuário ${usuario.id} deslogado automaticamente após $horasDesdeLogin horas de login.
-                        ***
-                        ***
-                        ***
-                    """.trimIndent())
+                    println(
+                        """
+                        ╔═══════════════════════════════════════════════════════════════════╗
+                        ║                                                                   ║
+                        ║   🎯🎯🎯 PROCESSAMENTO CONCLUÍDO 🎯🎯🎯                          ║
+                        ║       Usuário ${usuario.id} deslogado automaticamente             ║
+                        ║       Após $horasDesdeLogin horas de login                        ║
+                        ║                                                                   ║
+                        ╚════════��══════════════════════════════════════════════════════════╝
+                        """.trimIndent()
+                    )
                 }
             }
         }

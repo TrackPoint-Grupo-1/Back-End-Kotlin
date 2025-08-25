@@ -22,7 +22,7 @@ class TarefaResponseDTO(
         fun fromEntity(tarefa: Tarefa): TarefaResponseDTO {
             return TarefaResponseDTO(
                 id = tarefa.id,
-                usuarios = tarefa.usuarios?.id,
+                usuarios = tarefa.usuario?.id,
                 projeto = tarefa.projeto?.id,
                 nome = tarefa.nome,
                 descricao = tarefa.descricao,

@@ -23,7 +23,7 @@ class PontosService(
 
     fun registrarPonto(request: PontosCreateRequestDTO): PontosResponseDTO {
         val usuario = usuariosRepository.findById(request.usuarioId)
-            .orElseThrow { RuntimeException("Usuário não encontrado com id: ${request.usuarioId}") }
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${request.usuarioId}") }
 
         val ponto = Pontos(
             usuario = usuario,
@@ -38,13 +38,11 @@ class PontosService(
 
     fun atualizarPonto(id: Int, request: PontosUpdateRequestDTO): PontosResponseDTO {
         val pontoExistente = pontosRepository.findById(id)
-            .orElseThrow { RuntimeException("Ponto não encontrado com id: $id") }
+            .orElseThrow { PontosNaoEncontradosException("Ponto não encontrado com id: $id") }
 
         val horaAlmocoFinal = request.horaAlmoco ?: pontoExistente.horaAlmoco
         val horaVoltaAlmocoFinal = request.horaVoltaAlmoco ?: pontoExistente.horaVoltaAlmoco
         val horaSaidaFinal = request.horaSaida ?: pontoExistente.horaSaida
-
-        validarPontoUpdate(horaAlmocoFinal, horaVoltaAlmocoFinal, horaSaidaFinal)
 
         val pontoAtualizado = pontoExistente.copy(
             horaEntrada = request.horaEntrada ?: pontoExistente.horaEntrada,
@@ -56,27 +54,6 @@ class PontosService(
 
         val salvo = pontosRepository.save(pontoAtualizado)
         return PontosResponseDTO.fromEntity(salvo)
-    }
-
-    private fun validarPontoUpdate(
-        horaAlmoco: LocalDateTime?,
-        horaVoltaAlmoco: LocalDateTime?,
-        horaSaida: LocalDateTime?
-    ) {
-        if (horaVoltaAlmoco != null && horaAlmoco == null) {
-            throw PontoInvalidoException("Hora de volta do almoço não pode ser registrada sem a hora de almoço.")
-        }
-
-        if (horaSaida != null && horaVoltaAlmoco == null) {
-            throw PontoInvalidoException("Hora de saída não pode ser registrada sem a volta do almoço.")
-        }
-
-        if (horaAlmoco != null && horaVoltaAlmoco != null) {
-            val diferencaEmHoras = java.time.Duration.between(horaAlmoco, horaVoltaAlmoco).toMinutes().toDouble() / 60
-            if (diferencaEmHoras < 1) {
-                throw PontoInvalidoException("O intervalo de almoço deve ser de pelo menos 1 hora.")
-            }
-        }
     }
 
     fun listarPontosPorUsuarioPorData(usuarioId: Int, data: String): List<Pontos> {
@@ -109,17 +86,17 @@ class PontosService(
         val dataInicio = try {
             LocalDate.parse(dataInicioStr, formatter)
         } catch (e: DateTimeParseException) {
-            throw IllegalArgumentException("Formato da data de início inválido. Use dd-MM-yyyy")
+            throw DataInvalidaException("Formato da data de início inválido. Use dd-MM-yyyy")
         }
 
         val dataFim = try {
             LocalDate.parse(dataFimStr, formatter)
         } catch (e: DateTimeParseException) {
-            throw IllegalArgumentException("Formato da data de fim inválido. Use dd-MM-yyyy")
+            throw DataInvalidaException("Formato da data de fim inválido. Use dd-MM-yyyy")
         }
 
         if (dataInicio.isAfter(dataFim)) {
-            throw InvalidDateFormatException("A data de início não pode ser posterior à data de fim.")
+            throw DataInvalidaException("A data de início não pode ser posterior à data de fim.")
         }
 
         val usuario = usuariosRepository.findById(usuarioId)

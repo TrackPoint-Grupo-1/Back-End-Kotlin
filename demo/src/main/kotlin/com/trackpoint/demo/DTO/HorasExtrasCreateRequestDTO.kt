@@ -3,7 +3,9 @@ package com.trackpoint.demo.DTO
 import com.fasterxml.jackson.annotation.JsonFormat
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import java.sql.Time
 import java.time.LocalDate
+import java.time.LocalTime
 
 data class HorasExtrasCreateRequestDTO(
     @field:NotNull(message = "O usuário é obrigatório")
@@ -11,8 +13,8 @@ data class HorasExtrasCreateRequestDTO(
     @field:NotNull(message = "A data é obrigatória")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     val data: LocalDate,
-    @field:NotNull(message = "As horas são obrigatórias")
-    val horas: Double,
+    val horasDe: LocalTime,
+    val horasAte: LocalTime,
     @field:NotBlank(message = "O motivo não pode estar vazio")
     val motivo: String,
     @field:NotNull(message = "O campo 'foiSolicitado' é obrigatório")

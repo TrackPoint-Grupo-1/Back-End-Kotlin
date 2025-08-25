@@ -10,7 +10,7 @@ class TarefaCreateRequestDTO(
 
     @field:NotNull(message = "O ID do usuário responsável é obrigatório")
     @field:Positive(message = "O ID do usuário deve ser positivo")
-    val usuarios: Int,
+    val usuario: Int,
 
     @field:NotBlank(message = "O nome da tarefa é obrigatório")
     @field:Size(min = 3, max = 100, message = "O nome da tarefa deve ter entre 3 e 100 caracteres")

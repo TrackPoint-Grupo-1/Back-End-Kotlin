@@ -16,11 +16,11 @@ class Tarefa (
     val horasJaFeitas: Double = 0.0,
     @ManyToOne
     @JoinColumn(name = "usuarios_id")
-    val usuarios: Usuarios? = null,
+    val usuario: Usuarios? = null,
     @ManyToOne
     @JoinColumn(name = "projeto_id")
     val projeto: Projeto? = null,
-    val status: StatusTarefa = StatusTarefa.PENDENTE,
+    var status: StatusTarefa = StatusTarefa.PENDENTE,
     val listaDataStatus: MutableList<String> = mutableListOf(),
     val dataCriacao: LocalDateTime = LocalDateTime.now(),
     var dataConclusao: LocalDateTime? = null

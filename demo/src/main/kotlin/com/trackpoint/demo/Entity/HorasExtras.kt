@@ -2,6 +2,7 @@ package com.trackpoint.demo.Entity
 
 import jakarta.persistence.*
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity
 data class HorasExtras(
@@ -12,7 +13,8 @@ data class HorasExtras(
     @JoinColumn(name = "usuario_id")
     val usuario: Usuarios,
     val data: LocalDate,
-    var horas: Double,
+    var horasDe: LocalTime,
+    var horasAte: LocalTime,
     @Column(nullable = false)
     var motivo: String,
     var foiSolicitada: Boolean,
