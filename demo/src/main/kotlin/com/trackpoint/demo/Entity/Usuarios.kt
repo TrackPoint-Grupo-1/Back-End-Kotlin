@@ -20,9 +20,11 @@ data class Usuarios(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val cargo: CargosEnum,
+    val area: String,
     var ativo: Boolean,
     var logado: Boolean = false,
     var horasUltimoLogin: LocalDateTime? = null,
     var jornada: Double,
+    var limiteHorasExtrasMes: Double = 12.0,
     val criadoEm: LocalDateTime
 )

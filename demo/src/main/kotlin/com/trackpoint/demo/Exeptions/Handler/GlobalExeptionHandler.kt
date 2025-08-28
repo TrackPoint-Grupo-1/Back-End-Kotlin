@@ -195,11 +195,4 @@ class GlobalExeptionHandler {
             .body(mapOf("mensagem" to ex.message!!))
     }
 
-    @ExceptionHandler(NenhumaTarefaEncontradaException::class)
-    fun handleNenhumaTarefa(ex: NenhumaTarefaEncontradaException): ResponseEntity<Map<String, String>> {
-        return ResponseEntity
-            .status(HttpStatus.NO_CONTENT)
-            .body(mapOf("mensagem" to ex.message!!))
-    }
-
 }

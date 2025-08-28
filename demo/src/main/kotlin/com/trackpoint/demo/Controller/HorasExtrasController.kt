@@ -1,53 +1,51 @@
 package com.trackpoint.demo.Controller
 
-import com.trackpoint.demo.DTO.HorasExtrasCreateRequestDTO
-import com.trackpoint.demo.DTO.HorasExtrasResponseDTO
-import com.trackpoint.demo.DTO.HorasExtrasUpdateRequestDTO
+import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
+import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasResponseDTO
+import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
 import com.trackpoint.demo.Service.HorasExtrasService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @RestController
 @RequestMapping("/horas-extras")
 class HorasExtrasController (private val horasExtrasService: HorasExtrasService) {
 
     @PostMapping
-    fun criarHorasExtras(@RequestBody @Valid dto: HorasExtrasCreateRequestDTO): ResponseEntity<HorasExtrasResponseDTO> {
+    fun criarHorasExtras(@RequestBody @Valid dto: SolicitacaoHorasExtrasCreateRequestDTO): ResponseEntity<SolicitacaoHorasExtrasResponseDTO> {
         val horasExtrasCriada = horasExtrasService.criarHorasExtras(dto)
-        val responseDto = HorasExtrasResponseDTO(horasExtrasCriada)
+        val responseDto = SolicitacaoHorasExtrasResponseDTO(horasExtrasCriada)
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto)
     }
 
     @GetMapping
-    fun listarHorasExtras(): ResponseEntity<List<HorasExtrasResponseDTO>> {
+    fun listarHorasExtras(): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
         val horasExtrasList = horasExtrasService.listarTodasHorasExtras()
-        val responseList = horasExtrasList.map { HorasExtrasResponseDTO(it) }
+        val responseList = horasExtrasList.map { SolicitacaoHorasExtrasResponseDTO(it) }
         return ResponseEntity.ok(responseList)
     }
 
     @GetMapping("/solicitadas")
-    fun listarHorasQueFoiSolicitada(): ResponseEntity<List<HorasExtrasResponseDTO>> {
+    fun listarHorasQueFoiSolicitada(): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
         val horasExtrasList = horasExtrasService.listarTodasHorasQueForamSolicitada()
-        val responseList = horasExtrasList.filter { it.foiSolicitada }.map { HorasExtrasResponseDTO(it) }
+        val responseList = horasExtrasList.filter { it.foiSolicitada }.map { SolicitacaoHorasExtrasResponseDTO(it) }
         return ResponseEntity.ok(responseList)
     }
 
     @GetMapping("/nao-solicitadas")
-    fun listarHorasQueNaoFoiSolicitada(): ResponseEntity<List<HorasExtrasResponseDTO>> {
+    fun listarHorasQueNaoFoiSolicitada(): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
         val horasExtrasList = horasExtrasService.listarTodasHorasQueNaoForamSolicitada()
-        val responseList = horasExtrasList.filter { !it.foiSolicitada }.map { HorasExtrasResponseDTO(it) }
+        val responseList = horasExtrasList.filter { !it.foiSolicitada }.map { SolicitacaoHorasExtrasResponseDTO(it) }
         return ResponseEntity.ok(responseList)
     }
 
     @PatchMapping("/{id}")
-    fun atualizarHorasExtras(@PathVariable id: Int, @RequestBody dto: HorasExtrasUpdateRequestDTO
-    ): ResponseEntity<HorasExtrasResponseDTO> {
+    fun atualizarHorasExtras(@PathVariable id: Int, @RequestBody dto: SolicitacaoHorasExtrasUpdateRequestDTO
+    ): ResponseEntity<SolicitacaoHorasExtrasResponseDTO> {
         val horasExtrasAtualizada = horasExtrasService.atualizarHorasExtras(id, dto)
-        return ResponseEntity.ok(HorasExtrasResponseDTO(horasExtrasAtualizada))
+        return ResponseEntity.ok(SolicitacaoHorasExtrasResponseDTO(horasExtrasAtualizada))
     }
 
     @DeleteMapping("/{id}")
@@ -62,10 +60,10 @@ class HorasExtrasController (private val horasExtrasService: HorasExtrasService)
         @RequestParam dataInicio: String,
         @RequestParam dataFim: String,
         @RequestParam foiSolicitado: Boolean?
-    ): ResponseEntity<List<HorasExtrasResponseDTO>> {
+    ): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
 
         val horasExtrasList = horasExtrasService.listarHorasPorUsuarioEntreDatas(usuarioId, dataInicio, dataFim, foiSolicitado)
-        return ResponseEntity.ok(horasExtrasList.map { HorasExtrasResponseDTO(it) })
+        return ResponseEntity.ok(horasExtrasList.map { SolicitacaoHorasExtrasResponseDTO(it) })
     }
 
 }

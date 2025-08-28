@@ -19,7 +19,7 @@ class HorasExtrasScheduler(
 ) {
 
     // @Scheduled(cron = "0 50 23 * * *")
-    @Scheduled(fixedRate = 10000)
+    // @Scheduled(fixedRate = 10000)
     fun processarHorasExtrasAutomaticas() {
         println(
             """
@@ -68,7 +68,7 @@ class HorasExtrasScheduler(
                 }
 
                 println("⚡ Gerando novas horas extras para o usuário...")
-                horasExtrasService.gerarHorasExtrasAutomaticas(usuario.id, hoje)
+                //horasExtrasService.gerarHorasExtrasAutomaticas(usuario.id, hoje)
                 println("✅ Processamento de horas extras concluído para o usuário ${usuario.id}")
             } else {
                 println("❌ Nenhum ponto registrado para o dia, nada a processar para o usuário ${usuario.id}")

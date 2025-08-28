@@ -32,78 +32,49 @@ class UsuariosController (private val usuariosService: UsuariosService){
 
 
     @GetMapping("/{id}")
-    fun getUsuarioById(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
+    fun getUsuarioById(@PathVariable id: Int): ResponseEntity<Any> {
         val usuario = usuariosService.findById(id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(mapOf("message" to "Usuário com ID $id não encontrado"))
 
-        return ResponseEntity.ok(mapOf(
-            "id" to usuario.id.toString(),
-            "nome" to usuario.nome,
-            "email" to usuario.email,
-            "ativo" to usuario.ativo.toString(),
-            "logado" to usuario.logado.toString(),
-            "cargo" to usuario.cargo.toString(),
-            "criadoEm" to usuario.criadoEm.toString(),
-            "jornada" to usuario.jornada.toString(),
-            "horasUltimoLogin" to usuario.horasUltimoLogin.toString()))
+        return ResponseEntity.ok(usuario)
     }
 
     @GetMapping
     fun getAllUsuarios(): ResponseEntity<Any> {
-        val usuarios = usuariosService.findAll()
-        if (usuarios.isEmpty()) {
-            return ResponseEntity.noContent().build() // status 204, sem corpo
-            return ResponseEntity.status(HttpStatus.OK).body(mapOf("message" to "Nenhum usuário encontrado"))
+        return try {
+            val usuariosResponse = usuariosService.findAll()
+            ResponseEntity.ok(usuariosResponse)
+        } catch (ex: NoSuchElementException) {
+            ResponseEntity.noContent().build()
         }
-
-        val usuariosResponse = usuarios.map { UsuariosResponseDTO(it) }
-        return ResponseEntity.ok(usuariosResponse)
     }
 
-    @PutMapping("/{id}/soft-delete")
+
+    @DeleteMapping("/{id}/soft-delete")
     fun softDeleteUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
-        val usuario = usuariosService.findById(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
-
-        val usuarioSoftDeleted = usuario.copy(ativo = false)
-        usuariosService.save(usuarioSoftDeleted)
-
+        usuariosService.softDelete(id)
         return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deletado com sucesso"))
     }
 
+
     @PutMapping("/{id}/recuperar-usuario")
     fun recuperarUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
-        val usuario = usuariosService.findById(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
-
-        val usuarioSoftDeleted = usuario.copy(ativo = true)
-        usuariosService.save(usuarioSoftDeleted)
-
+        usuariosService.recuperar(id)
         return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id recuperado com sucesso"))
     }
 
     @DeleteMapping("/{id}")
     fun deleteUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
-        val usuario = usuariosService.findById(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
-
-        usuariosService.save(usuario.copy(ativo = false)) // Soft delete
+        usuariosService.softDelete(id)
         return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deletado com sucesso"))
     }
 
     @PatchMapping("/{id}/logar")
     fun logarUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
-        val usuario = usuariosService.findById(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
+        val sucesso = usuariosService.tentarLogin(id)
 
-        val logado = usuariosService.tentarLogin(usuario)
-
-        return if (logado) {
+        return if (sucesso) {
             ResponseEntity.ok(mapOf("message" to "Usuário com ID $id logado com sucesso"))
         } else {
             ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -113,19 +84,14 @@ class UsuariosController (private val usuariosService: UsuariosService){
 
     @PatchMapping("/{id}/deslogar")
     fun deslogarUsuario(@PathVariable id: Int): ResponseEntity<Map<String, String>> {
-        val usuario = usuariosService.findById(id)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(mapOf("message" to "Usuário com ID $id não encontrado"))
+        val sucesso = usuariosService.deslogar(id)
 
-        if (!usuario.ativo) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(mapOf("message" to "Usuário com ID $id está inativo"))
+        return if (sucesso) {
+            ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deslogado com sucesso"))
+        } else {
+            ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(mapOf("message" to "Usuário com ID $id está inativo ou já está deslogado"))
         }
-
-        usuario.logado = false
-        usuariosService.save(usuario)
-
-        return ResponseEntity.ok(mapOf("message" to "Usuário com ID $id deslogado com sucesso"))
     }
 
 }

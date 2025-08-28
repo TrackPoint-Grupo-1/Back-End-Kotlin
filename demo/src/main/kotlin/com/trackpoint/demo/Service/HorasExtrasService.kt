@@ -1,8 +1,8 @@
 package com.trackpoint.demo.Service
 
-import com.trackpoint.demo.DTO.HorasExtrasCreateRequestDTO
-import com.trackpoint.demo.DTO.HorasExtrasUpdateRequestDTO
-import com.trackpoint.demo.Entity.HorasExtras
+import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
+import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
+import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Exeptions.InvalidDateFormatException
 import com.trackpoint.demo.Exeptions.NenhumaHoraExtraEncontradaException
@@ -24,7 +24,7 @@ class HorasExtrasService(
     private val pontosRepository: PontosRepository
 ) {
 
-    fun criarHorasExtras(dto: HorasExtrasCreateRequestDTO): HorasExtras {
+    fun criarHorasExtras(dto: SolicitacaoHorasExtrasCreateRequestDTO): SolicitacaoHorasExtras {
         val usuario = usuariosRepository.findById(dto.usuarioId)
             .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${dto.usuarioId}") }
 
@@ -38,86 +38,91 @@ class HorasExtrasService(
             existente.apply {
                 horasDe = dto.horasDe
                 horasAte = dto.horasAte
-                motivo = dto.motivo
-                foiSolicitada = true
+                codigoProjeto = dto.codigoProjeto
+                justificativa = dto.justificativa
+                observacao = dto.observacao
             }.also { horasExtrasRepository.save(it) }
         } else {
-            val horasExtras = HorasExtras(
+            val solicitacaoHorasExtras = SolicitacaoHorasExtras(
                 usuario = usuario,
                 data = dto.data,
                 horasDe = dto.horasDe,
                 horasAte = dto.horasAte,
-                motivo = dto.motivo,
-                foiSolicitada = dto.foiSolicitado,
+                codigoProjeto = dto.codigoProjeto,
+                justificativa = dto.justificativa,
+                observacao = dto.observacao,
+                foiSolicitada = true,
+                foiAprovada = false,
+                foiFeita = false,
                 criadoEm = LocalDate.now()
             )
-            horasExtrasRepository.save(horasExtras)
+            horasExtrasRepository.save(solicitacaoHorasExtras)
         }
     }
 
 
-    fun gerarHorasExtrasAutomaticas(usuarioId: Int, data: LocalDate) {
-        val usuario = usuariosRepository.findById(usuarioId)
-            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado") }
-
-        val inicioDoDia = data.atStartOfDay()
-        val fimDoDia = data.atTime(LocalTime.MAX)
-
-        val pontosDoDia = pontosRepository.findByUsuarioIdAndCriadoEmBetween(usuarioId, inicioDoDia, fimDoDia)
-        if (pontosDoDia.isEmpty()) return
-
-        pontosDoDia.forEach { ponto ->
-            val periodoTrabalhado = calcularPeriodoTrabalhado(ponto) // Pair<LocalTime, LocalTime>
-            val horasDe = periodoTrabalhado.first
-            val horasAte = periodoTrabalhado.second
-
-            val existente = horasExtrasRepository.findByUsuarioIdAndData(usuarioId, data)
-
-            if (existente != null) {
-                // Caso tenha registro solicitado
-                when {
-                    // Caso 1: trabalhou menos do que o solicitado
-                    horasAte.isAfter(existente.horasDe) && horasAte.isBefore(existente.horasAte) -> {
-                        existente.horasAte = horasAte
-                        existente.foiFeita = true
-                        horasExtrasRepository.save(existente)
-                    }
-
-                    // Caso 2: trabalhou exatamente até o fim ou além do solicitado
-                    horasAte.isAfter(existente.horasAte) || horasAte == existente.horasAte -> {
-                        existente.foiFeita = true
-                        horasExtrasRepository.save(existente)
-
-                        // Se trabalhou além, cria indevida
-                        if (horasAte.isAfter(existente.horasAte)) {
-                            val indevida = HorasExtras(
-                                usuario = usuario,
-                                data = data,
-                                horasDe = existente.horasAte,
-                                horasAte = horasAte,
-                                motivo = "",
-                                foiSolicitada = false,
-                                foiFeita = true
-                            )
-                            horasExtrasRepository.save(indevida)
-                        }
-                    }
-                }
-            } else {
-                // Nenhum registro solicitado → salva tudo como indevida
-                val indevida = HorasExtras(
-                    usuario = usuario,
-                    data = data,
-                    horasDe = horasDe,
-                    horasAte = horasAte,
-                    motivo = "",
-                    foiSolicitada = false,
-                    foiFeita = true
-                )
-                horasExtrasRepository.save(indevida)
-            }
-        }
-    }
+//    fun gerarHorasExtrasAutomaticas(usuarioId: Int, data: LocalDate) {
+//        val usuario = usuariosRepository.findById(usuarioId)
+//            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado") }
+//
+//        val inicioDoDia = data.atStartOfDay()
+//        val fimDoDia = data.atTime(LocalTime.MAX)
+//
+//        val pontosDoDia = pontosRepository.findByUsuarioIdAndCriadoEmBetween(usuarioId, inicioDoDia, fimDoDia)
+//        if (pontosDoDia.isEmpty()) return
+//
+//        pontosDoDia.forEach { ponto ->
+//            val periodoTrabalhado = calcularPeriodoTrabalhado(ponto) // Pair<LocalTime, LocalTime>
+//            val horasDe = periodoTrabalhado.first
+//            val horasAte = periodoTrabalhado.second
+//
+//            val existente = horasExtrasRepository.findByUsuarioIdAndData(usuarioId, data)
+//
+//            if (existente != null) {
+//                // Caso tenha registro solicitado
+//                when {
+//                    // Caso 1: trabalhou menos do que o solicitado
+//                    horasAte.isAfter(existente.horasDe) && horasAte.isBefore(existente.horasAte) -> {
+//                        existente.horasAte = horasAte
+//                        existente.foiFeita = true
+//                        horasExtrasRepository.save(existente)
+//                    }
+//
+//                    // Caso 2: trabalhou exatamente até o fim ou além do solicitado
+//                    horasAte.isAfter(existente.horasAte) || horasAte == existente.horasAte -> {
+//                        existente.foiFeita = true
+//                        horasExtrasRepository.save(existente)
+//
+//                        // Se trabalhou além, cria indevida
+//                        if (horasAte.isAfter(existente.horasAte)) {
+//                            val indevida = HorasExtras(
+//                                usuario = usuario,
+//                                data = data,
+//                                horasDe = existente.horasAte,
+//                                horasAte = horasAte,
+//                                justificativa = "",
+//                                foiSolicitada = false,
+//                                foiFeita = true
+//                            )
+//                            horasExtrasRepository.save(indevida)
+//                        }
+//                    }
+//                }
+//            } else {
+//                // Nenhum registro solicitado → salva tudo como indevida
+//                val indevida = HorasExtras(
+//                    usuario = usuario,
+//                    data = data,
+//                    horasDe = horasDe,
+//                    horasAte = horasAte,
+//                    justificativa = "",
+//                    foiSolicitada = false,
+//                    foiFeita = true
+//                )
+//                horasExtrasRepository.save(indevida)
+//            }
+//        }
+//    }
 
     fun calcularHorasTrabalhadas(ponto: Pontos): Double {
         val (inicio, fim) = calcularPeriodoTrabalhado(ponto)
@@ -158,17 +163,11 @@ class HorasExtrasService(
         return Pair(inicioTrabalho, fimTrabalho)
     }
 
-
-
-
-
-
-
-    fun listarTodasHorasExtras(): List<HorasExtras> {
+    fun listarTodasHorasExtras(): List<SolicitacaoHorasExtras> {
         return horasExtrasRepository.findAll()
     }
 
-    fun listarTodasHorasQueForamSolicitada(): List<HorasExtras> {
+    fun listarTodasHorasQueForamSolicitada(): List<SolicitacaoHorasExtras> {
         val horas = horasExtrasRepository.findByFoiSolicitadaTrue()
         if (horas.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra solicitada foi encontrada.")
@@ -176,7 +175,7 @@ class HorasExtrasService(
         return horas
     }
 
-    fun listarTodasHorasQueNaoForamSolicitada(): List<HorasExtras> {
+    fun listarTodasHorasQueNaoForamSolicitada(): List<SolicitacaoHorasExtras> {
         val horas = horasExtrasRepository.findByFoiSolicitadaFalse()
         if (horas.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra não solicitada foi encontrada.")
@@ -184,7 +183,7 @@ class HorasExtrasService(
         return horas
     }
 
-    fun atualizarHorasExtras(id: Int, dto: HorasExtrasUpdateRequestDTO): HorasExtras {
+    fun atualizarHorasExtras(id: Int, dto: SolicitacaoHorasExtrasUpdateRequestDTO): SolicitacaoHorasExtras {
         val horasExtrasExistente = horasExtrasRepository.findById(id)
             .orElseThrow { RuntimeException("Horas extras não encontrada com id: $id") }
 
@@ -198,8 +197,11 @@ class HorasExtrasService(
             data = dto.data ?: horasExtrasExistente.data,
             horasDe = dto.horasDe ?: horasExtrasExistente.horasDe,
             horasAte = dto.horasAte ?: horasExtrasExistente.horasAte,
-            motivo = dto.motivo ?: horasExtrasExistente.motivo,
-            foiSolicitada = dto.foiSolicitado ?: horasExtrasExistente.foiSolicitada
+            codigoProjeto = dto.codigoProjeto ?: horasExtrasExistente.codigoProjeto,
+            justificativa = dto.justificativa ?: horasExtrasExistente.justificativa,
+            observacao = dto.observacao ?: horasExtrasExistente.observacao,
+            foiSolicitada = dto.foiSolicitada ?: horasExtrasExistente.foiSolicitada,
+            foiFeita = dto.foiFeita ?: horasExtrasExistente.foiFeita,
         )
 
         return horasExtrasRepository.save(horasExtrasAtualizada)
@@ -218,7 +220,7 @@ class HorasExtrasService(
         dataInicio: String,
         dataFim: String,
         foiSolicitado: Boolean? = null
-    ): List<HorasExtras> {
+    ): List<SolicitacaoHorasExtras> {
 
         // Valida e parse das datas
         val inicio = try {

@@ -27,5 +27,8 @@ data class UsuariosCreateRequestDTO(
     val cargo: CargosEnum,
 
     @field:jakarta.validation.constraints.NotNull(message = "A jornada não pode ser nula")
-    var jornada: Double
-)
+    var jornada: Double,
+    @field:NotBlank(message = "A área não pode estar vazia")
+    var area: String,
+    var limiteHorasExtrasMes: Double = 12.0,
+    )

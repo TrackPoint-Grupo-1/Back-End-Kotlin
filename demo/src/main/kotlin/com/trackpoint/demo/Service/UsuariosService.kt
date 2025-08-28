@@ -1,13 +1,13 @@
 package com.trackpoint.demo.Service
 
 import com.trackpoint.demo.DTO.UsuariosCreateRequestDTO
+import com.trackpoint.demo.DTO.UsuariosResponseDTO
 import com.trackpoint.demo.DTO.UsuariosUpdateRequestDTO
 import com.trackpoint.demo.Entity.Usuarios
 import com.trackpoint.demo.Exeptions.EmailJaExisteException
+import com.trackpoint.demo.Exeptions.UsuarioNotFoundException
 import com.trackpoint.demo.Repository.UsuariosRepository
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import java.time.Duration
 import java.time.LocalDateTime
 
 @Service
@@ -22,7 +22,9 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
             cargo = usuarioDTO.cargo,
             ativo = true,
             criadoEm = LocalDateTime.now(),
-            jornada = usuarioDTO.jornada
+            jornada = usuarioDTO.jornada,
+            limiteHorasExtrasMes = usuarioDTO.limiteHorasExtrasMes,
+            area = usuarioDTO.area
         )
 
         if (usuariosRepository.existsByEmail(usuario.email)) {
@@ -49,33 +51,78 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
             senha = usuarioDTO.senha ?: usuarioExistente.senha,
             cargo = usuarioDTO.cargo ?: usuarioExistente.cargo,
             ativo = usuarioDTO.ativo ?: usuarioExistente.ativo,
-            criadoEm = usuarioExistente.criadoEm
+            jornada = usuarioDTO.jornada ?: usuarioExistente.jornada,
+            limiteHorasExtrasMes = usuarioDTO.limiteHorasExtrasMes ?: usuarioExistente.limiteHorasExtrasMes,
+            criadoEm = usuarioExistente.criadoEm,
+            area = usuarioDTO.area ?: usuarioExistente.area
         )
 
         return usuariosRepository.save(usuarioAtualizado)
     }
 
-    fun findById(id: Int): Usuarios? {
-        return usuariosRepository.findById(id).orElse(null)
+    fun findById(id: Int): UsuariosResponseDTO? {
+        val usuario = usuariosRepository.findById(id).orElse(null)
+        return usuario?.let { UsuariosResponseDTO(it) }
     }
 
-    fun findAll(): List<Usuarios> {
-        return usuariosRepository.findAll()
+    fun findAll(): List<UsuariosResponseDTO> {
+        val usuarios = usuariosRepository.findAll()
+
+        if (usuarios.isEmpty()) {
+            throw UsuarioNotFoundException("Nenhum usuário encontrado")
+        }
+
+        return usuarios.map { UsuariosResponseDTO(it) }
     }
 
     fun save(usuario: Usuarios): Usuarios {
         return usuariosRepository.save(usuario)
     }
 
-    fun tentarLogin(usuario: Usuarios): Boolean {
+    fun tentarLogin(id: Int): Boolean {
+        val usuario = usuariosRepository.findById(id)
+            .orElseThrow { UsuarioNotFoundException("Usuário com ID $id não encontrado") }
+
         if (usuario.ativo && !usuario.logado) {
-            usuario.logado = true
-            usuario.horasUltimoLogin = LocalDateTime.now()
-            usuariosRepository.save(usuario)
+            val atualizado = usuario.copy(
+                logado = true,
+                horasUltimoLogin = LocalDateTime.now()
+            )
+            usuariosRepository.save(atualizado)
             return true
         }
+
         return false
     }
 
+    fun softDelete(id: Int) {
+        val usuario = usuariosRepository.findById(id)
+                .orElseThrow { UsuarioNotFoundException("Usuário com ID $id não encontrado") }
+
+        val usuarioSoftDeleted = usuario.copy(ativo = false)
+        usuariosRepository.save(usuarioSoftDeleted)
+    }
+
+    fun recuperar(id: Int): Usuarios {
+        val usuario = usuariosRepository.findById(id)
+            .orElseThrow { UsuarioNotFoundException("Usuário com ID $id não encontrado") }
+
+        val usuarioRecuperado = usuario.copy(ativo = true)
+        return usuariosRepository.save(usuarioRecuperado)
+    }
+
+    fun deslogar(id: Int): Boolean {
+        val usuario = usuariosRepository.findById(id)
+            .orElseThrow { UsuarioNotFoundException("Usuário com ID $id não encontrado") }
+
+        if (!usuario.ativo || !usuario.logado) {
+            return false
+        }
+
+        val usuarioAtualizado = usuario.copy(logado = false)
+        usuariosRepository.save(usuarioAtualizado)
+
+        return true
+    }
 
 }

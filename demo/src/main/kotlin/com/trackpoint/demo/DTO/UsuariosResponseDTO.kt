@@ -10,10 +10,12 @@ data class UsuariosResponseDTO(
     val email: String,
     val cargo: CargosEnum,
     val ativo: Boolean,
-    val logado: Boolean,
-    val horasUltimoLogin: String,
+    var logado: Boolean,
+    var horasUltimoLogin: String,
     var jornada: Double,
-    val criadoEm: LocalDateTime
+    var limiteHorasExtrasMes: Double,
+    val criadoEm: LocalDateTime,
+    val area: String?
 ) {
     constructor(usuario: Usuarios) : this(
         id = usuario.id,
@@ -24,7 +26,9 @@ data class UsuariosResponseDTO(
         logado = usuario.logado,
         horasUltimoLogin = usuario.horasUltimoLogin?.toString() ?: "N/A",
         jornada = usuario.jornada,
-        criadoEm = usuario.criadoEm
+        limiteHorasExtrasMes = usuario.limiteHorasExtrasMes,
+        criadoEm = usuario.criadoEm,
+        area = usuario.area
     )
 
     companion object {
@@ -38,7 +42,9 @@ data class UsuariosResponseDTO(
                 logado = usuario.logado,
                 horasUltimoLogin = usuario.horasUltimoLogin.toString(),
                 jornada = usuario.jornada,
-                criadoEm = usuario.criadoEm
+                limiteHorasExtrasMes = usuario.limiteHorasExtrasMes,
+                criadoEm = usuario.criadoEm,
+                area = usuario.area
             )
         }
     }
