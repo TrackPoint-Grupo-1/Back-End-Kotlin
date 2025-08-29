@@ -141,44 +141,44 @@ class SolicitarHorasExtrasService(
 //        }
 //    }
 
-    fun calcularHorasTrabalhadas(ponto: Pontos): Double {
-        val (inicio, fim) = calcularPeriodoTrabalhado(ponto)
-        var duracao = Duration.between(inicio, fim).toMinutes().toDouble() / 60.0
-
-        // Desconta almoço se registrado
-        if (ponto.horaAlmoco != null && ponto.horaVoltaAlmoco != null) {
-            val almoco = Duration.between(
-                ponto.horaAlmoco!!.toLocalTime(),
-                ponto.horaVoltaAlmoco!!.toLocalTime()
-            ).toMinutes().toDouble() / 60.0
-            duracao -= almoco
-        }
-
-        return duracao.coerceAtLeast(0.0)
-    }
-
-    fun calcularPeriodoTrabalhado(ponto: Pontos): Pair<LocalTime, LocalTime> {
-        val entrada = ponto.horaEntrada?.toLocalTime()
-            ?: throw IllegalArgumentException("Hora de entrada não registrada")
-        val saida = ponto.horaSaida?.toLocalTime()
-            ?: throw IllegalArgumentException("Hora de saída não registrada")
-
-        val almocoInicio = ponto.horaAlmoco?.toLocalTime()
-        val almocoFim = ponto.horaVoltaAlmoco?.toLocalTime()
-
-        var inicioTrabalho = entrada
-        var fimTrabalho = saida
-
-        if (almocoInicio != null && almocoFim != null) {
-            val duracaoTotal = Duration.between(entrada, saida).toMinutes()
-            val duracaoAlmoco = Duration.between(almocoInicio, almocoFim).toMinutes()
-            val duracaoEfetiva = duracaoTotal - duracaoAlmoco
-
-            println("Duração efetiva descontando almoço: $duracaoEfetiva minutos")
-        }
-
-        return Pair(inicioTrabalho, fimTrabalho)
-    }
+//    fun calcularHorasTrabalhadas(ponto: Pontos): Double {
+//        val (inicio, fim) = calcularPeriodoTrabalhado(ponto)
+//        var duracao = Duration.between(inicio, fim).toMinutes().toDouble() / 60.0
+//
+//        // Desconta almoço se registrado
+//        if (ponto.horaAlmoco != null && ponto.horaVoltaAlmoco != null) {
+//            val almoco = Duration.between(
+//                ponto.horaAlmoco!!.toLocalTime(),
+//                ponto.horaVoltaAlmoco!!.toLocalTime()
+//            ).toMinutes().toDouble() / 60.0
+//            duracao -= almoco
+//        }
+//
+//        return duracao.coerceAtLeast(0.0)
+//    }
+//
+//    fun calcularPeriodoTrabalhado(ponto: Pontos): Pair<LocalTime, LocalTime> {
+//        val entrada = ponto.horaEntrada?.toLocalTime()
+//            ?: throw IllegalArgumentException("Hora de entrada não registrada")
+//        val saida = ponto.horaSaida?.toLocalTime()
+//            ?: throw IllegalArgumentException("Hora de saída não registrada")
+//
+//        val almocoInicio = ponto.horaAlmoco?.toLocalTime()
+//        val almocoFim = ponto.horaVoltaAlmoco?.toLocalTime()
+//
+//        var inicioTrabalho = entrada
+//        var fimTrabalho = saida
+//
+//        if (almocoInicio != null && almocoFim != null) {
+//            val duracaoTotal = Duration.between(entrada, saida).toMinutes()
+//            val duracaoAlmoco = Duration.between(almocoInicio, almocoFim).toMinutes()
+//            val duracaoEfetiva = duracaoTotal - duracaoAlmoco
+//
+//            println("Duração efetiva descontando almoço: $duracaoEfetiva minutos")
+//        }
+//
+//        return Pair(inicioTrabalho, fimTrabalho)
+//    }
 
     fun listarTodasHorasExtras(): List<SolicitacaoHorasExtras> {
         return solicitarHorasExtrasRepository.findAll()

@@ -1,21 +1,28 @@
 package com.trackpoint.demo.Entity
 
+import com.trackpoint.demo.Enum.TipoPonto
 import jakarta.persistence.*
-import java.sql.Time
 import java.time.LocalDateTime
+import java.util.*
 
 @Entity
 data class Pontos(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Int =0,
+    val id: Int = 0,
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     val usuario: Usuarios,
-    val horaEntrada: LocalDateTime? = null,
-    val horaAlmoco: LocalDateTime? = null,
-    val horaVoltaAlmoco: LocalDateTime? = null,
-    val horaSaida: LocalDateTime? = null,
+
+    @Enumerated(EnumType.STRING)
+    val tipo: TipoPonto,
+
+    var localidade: String? = null,
+
+    val horario: LocalDateTime = LocalDateTime.now(),
+
     val observacoes: String? = null,
-    val criadoEm: LocalDateTime = LocalDateTime.now()
+
+    val turno: String = UUID.randomUUID().toString()
 )

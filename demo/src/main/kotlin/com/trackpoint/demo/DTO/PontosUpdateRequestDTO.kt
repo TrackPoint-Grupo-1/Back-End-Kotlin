@@ -1,11 +1,11 @@
 package com.trackpoint.demo.DTO
 
+import com.trackpoint.demo.Enum.TipoPonto
 import java.time.LocalDateTime
 
 data class PontosUpdateRequestDTO(
-    val horaEntrada: LocalDateTime? = null,
-    val horaAlmoco: LocalDateTime? = null,
-    val horaVoltaAlmoco: LocalDateTime? = null,
-    val horaSaida: LocalDateTime? = null,
+    val tipo: TipoPonto? = null,
+    val horario: LocalDateTime? = null,
+    val localidades: List<String>? = null,
     val observacoes: String? = null
 )

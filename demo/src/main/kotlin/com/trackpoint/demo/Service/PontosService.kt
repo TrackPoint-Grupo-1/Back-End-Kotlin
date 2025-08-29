@@ -2,18 +2,14 @@ package com.trackpoint.demo.Service
 
 import com.trackpoint.demo.DTO.PontosCreateRequestDTO
 import com.trackpoint.demo.DTO.PontosResponseDTO
-import com.trackpoint.demo.DTO.PontosUpdateRequestDTO
 import com.trackpoint.demo.Entity.Pontos
+import com.trackpoint.demo.Enum.TipoPonto
 import com.trackpoint.demo.Exeptions.*
 import com.trackpoint.demo.Repository.PontosRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
-import java.sql.Time
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
+import java.util.*
 
 @Service
 class PontosService(
@@ -21,99 +17,74 @@ class PontosService(
     private val usuariosRepository: UsuariosRepository
 ) {
 
-    fun registrarPonto(request: PontosCreateRequestDTO): PontosResponseDTO {
-        val usuario = usuariosRepository.findById(request.usuarioId)
-            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${request.usuarioId}") }
+    fun criarPonto(dto: PontosCreateRequestDTO): PontosResponseDTO {
+        val usuario = usuariosRepository.findById(dto.usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${dto.usuarioId}") }
+
+        val horario = dto.horario ?: LocalDateTime.now()
+
+        if (dto.tipo == TipoPonto.ENTRADA) {
+            val turnoAberto = pontosRepository.findLastOpenTurn(usuario)
+            if (turnoAberto != null) {
+                throw RegraDeNegocioException(
+                    "Não é possível iniciar um novo turno antes de registrar a SAÍDA do turno anterior"
+                )
+            }
+        }
+
+        // Determinar o turnoId
+        val turnoId = when (dto.tipo) {
+            TipoPonto.ENTRADA -> UUID.randomUUID().toString() // cria novo turno
+            else -> {
+                val ultimoTurnoAberto = pontosRepository.findFirstByUsuarioAndTipoNotOrderByHorarioDesc(usuario, TipoPonto.SAIDA)
+                    ?: throw RegraDeNegocioException("Não existe turno aberto para registrar ${dto.tipo}")
+                ultimoTurnoAberto.turno
+            }
+        }
+
+        // Buscar todas as batidas do turno
+        val batidasDoTurno = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(
+            usuario,
+            horario.minusHours(12), // busca últimas 12h para incluir overnight
+            horario.plusHours(12)
+        ).filter { it.turno == turnoId }
+
+        // Validação mínima de consistência
+        when (dto.tipo) {
+            TipoPonto.SAIDA -> {
+                val entradas = batidasDoTurno.count { it.tipo == TipoPonto.ENTRADA || it.tipo == TipoPonto.VOLTA_ALMOCO }
+                val saidas = batidasDoTurno.count { it.tipo == TipoPonto.SAIDA || it.tipo == TipoPonto.ALMOCO }
+                if (entradas <= saidas) {
+                    throw RegraDeNegocioException("Não é possível registrar SAÍDA sem entrada correspondente")
+                }
+            }
+            TipoPonto.ALMOCO -> {
+                val entradas = batidasDoTurno.count { it.tipo == TipoPonto.ENTRADA || it.tipo == TipoPonto.VOLTA_ALMOCO }
+                val almocos = batidasDoTurno.count { it.tipo == TipoPonto.ALMOCO }
+                if (entradas <= almocos) {
+                    throw RegraDeNegocioException("Não é possível registrar ALMOÇO sem entrada correspondente")
+                }
+            }
+            TipoPonto.VOLTA_ALMOCO -> {
+                val almocos = batidasDoTurno.count { it.tipo == TipoPonto.ALMOCO }
+                val voltas = batidasDoTurno.count { it.tipo == TipoPonto.VOLTA_ALMOCO }
+                if (almocos <= voltas) {
+                    throw RegraDeNegocioException("Não é possível registrar VOLTA_ALMOCO sem ALMOÇO correspondente")
+                }
+            }
+            else -> { /* ENTRADA sempre permitido */ }
+        }
 
         val ponto = Pontos(
             usuario = usuario,
-            horaEntrada = request.horaEntrada,
-            observacoes = request.observacoes
+            tipo = dto.tipo,
+            horario = horario,
+            localidade = dto.localidade,
+            observacoes = dto.observacoes,
+            turno = turnoId
         )
 
-        val pontoSalvo = pontosRepository.save(ponto)
-        return PontosResponseDTO.fromEntity(pontoSalvo)
-    }
-
-
-    fun atualizarPonto(id: Int, request: PontosUpdateRequestDTO): PontosResponseDTO {
-        val pontoExistente = pontosRepository.findById(id)
-            .orElseThrow { PontosNaoEncontradosException("Ponto não encontrado com id: $id") }
-
-        val horaAlmocoFinal = request.horaAlmoco ?: pontoExistente.horaAlmoco
-        val horaVoltaAlmocoFinal = request.horaVoltaAlmoco ?: pontoExistente.horaVoltaAlmoco
-        val horaSaidaFinal = request.horaSaida ?: pontoExistente.horaSaida
-
-        val pontoAtualizado = pontoExistente.copy(
-            horaEntrada = request.horaEntrada ?: pontoExistente.horaEntrada,
-            horaAlmoco = horaAlmocoFinal,
-            horaVoltaAlmoco = horaVoltaAlmocoFinal,
-            horaSaida = horaSaidaFinal,
-            observacoes = request.observacoes ?: pontoExistente.observacoes
-        )
-
-        val salvo = pontosRepository.save(pontoAtualizado)
+        val salvo = pontosRepository.save(ponto)
         return PontosResponseDTO.fromEntity(salvo)
     }
-
-    fun listarPontosPorUsuarioPorData(usuarioId: Int, data: String): List<Pontos> {
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-
-        val localDate = try {
-            LocalDate.parse(data, formatter)
-        } catch (e: DateTimeParseException) {
-            throw InvalidDateFormatException("Formato de data inválido. Use dd-MM-yyyy")
-        }
-
-        val usuario = usuariosRepository.findById(usuarioId)
-            .orElseThrow { UsuarioNotFoundException("Usuário com ID $usuarioId não encontrado") }
-
-        val inicioDoDia = localDate.atStartOfDay()
-        val fimDoDia = localDate.atTime(LocalTime.MAX)
-
-        val pontos = pontosRepository.findByUsuarioIdAndCriadoEmBetween(usuarioId, inicioDoDia, fimDoDia)
-
-        if (pontos.isEmpty()) {
-            throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário ${usuario.id} na data $localDate")
-        }
-
-        return pontos
-    }
-
-    fun listarPontosPorUsuarioPorPeriodo(usuarioId: Int, dataInicioStr: String, dataFimStr: String): List<Pontos> {
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-
-        val dataInicio = try {
-            LocalDate.parse(dataInicioStr, formatter)
-        } catch (e: DateTimeParseException) {
-            throw DataInvalidaException("Formato da data de início inválido. Use dd-MM-yyyy")
-        }
-
-        val dataFim = try {
-            LocalDate.parse(dataFimStr, formatter)
-        } catch (e: DateTimeParseException) {
-            throw DataInvalidaException("Formato da data de fim inválido. Use dd-MM-yyyy")
-        }
-
-        if (dataInicio.isAfter(dataFim)) {
-            throw DataInvalidaException("A data de início não pode ser posterior à data de fim.")
-        }
-
-        val usuario = usuariosRepository.findById(usuarioId)
-            .orElseThrow { UsuarioNotFoundException("Usuário com ID $usuarioId não encontrado") }
-
-        val inicioDoPeriodo = dataInicio.atStartOfDay()
-        val fimDoPeriodo = dataFim.atTime(LocalTime.MAX)
-
-        val pontos = pontosRepository.findByUsuarioIdAndCriadoEmBetween(usuarioId, inicioDoPeriodo, fimDoPeriodo)
-
-        if (pontos.isEmpty()) {
-            throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário ${usuario.id} no período ${dataInicioStr} a ${dataFimStr}")
-        }
-
-        return pontos
-    }
-
-
-
 }
