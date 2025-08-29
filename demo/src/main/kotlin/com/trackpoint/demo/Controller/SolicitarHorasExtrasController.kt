@@ -1,9 +1,6 @@
 package com.trackpoint.demo.Controller
 
-import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
-import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
-import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasResponseDTO
-import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
+import com.trackpoint.demo.DTO.*
 import com.trackpoint.demo.Service.SolicitarHorasExtrasService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -76,6 +73,10 @@ class SolicitarHorasExtrasController (private val solicitarHorasExtrasService: S
         return ResponseEntity.ok(ranking)
     }
 
-
+    @GetMapping("/ranking/projeto/{idProjeto}")
+    fun rankingPorProjeto(@PathVariable idProjeto: Int): ResponseEntity<List<RankingHorasExtrasProjetoDTO>> {
+        val ranking = solicitarHorasExtrasService.rankingUsuariosPorProjeto(idProjeto)
+        return ResponseEntity.ok(ranking)
+    }
 
 }

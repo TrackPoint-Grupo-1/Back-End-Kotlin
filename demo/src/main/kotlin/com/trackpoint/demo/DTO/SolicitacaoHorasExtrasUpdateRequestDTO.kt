@@ -10,7 +10,7 @@ data class SolicitacaoHorasExtrasUpdateRequestDTO(
     val data: LocalDate?,
     val horasDe: LocalTime?,
     val horasAte: LocalTime?,
-    val codigoProjeto: Int?,
+    val projeto: Int?,
     val justificativa: String?,
     val observacao: String?,
     var foiSolicitada: Boolean?,

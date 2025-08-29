@@ -13,7 +13,7 @@ class Projeto(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Int = 0,
+    var id: Int = 0,
     @field:NotBlank(message = "O nome do projeto é obrigatório")
     val nome: String,
     @field:NotBlank(message = "A descrição é obrigatória")

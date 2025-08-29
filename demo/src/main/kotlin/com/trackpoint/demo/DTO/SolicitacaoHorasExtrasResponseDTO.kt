@@ -28,7 +28,7 @@ data class SolicitacaoHorasExtrasResponseDTO(
         data = solicitacaoHorasExtras.data,
         horasDe = solicitacaoHorasExtras.horasDe,
         horasAte = solicitacaoHorasExtras.horasAte,
-        codigoProjeto = solicitacaoHorasExtras.codigoProjeto,
+        codigoProjeto = solicitacaoHorasExtras.projeto.id,
         justificativa = solicitacaoHorasExtras.justificativa,
         observacao = solicitacaoHorasExtras.observacao,
         foiSolicitado = solicitacaoHorasExtras.foiSolicitada,

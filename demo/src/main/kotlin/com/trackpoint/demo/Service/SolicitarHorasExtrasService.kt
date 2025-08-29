@@ -1,6 +1,7 @@
 package com.trackpoint.demo.Service
 
 import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
+import com.trackpoint.demo.DTO.RankingHorasExtrasProjetoDTO
 import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
 import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
@@ -13,7 +14,9 @@ import com.trackpoint.demo.Repository.SolicitarHorasExtrasRepository
 import com.trackpoint.demo.Repository.PontosRepository
 import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -29,35 +32,28 @@ class SolicitarHorasExtrasService(
 ) {
 
     fun criarHorasExtras(dto: SolicitacaoHorasExtrasCreateRequestDTO): SolicitacaoHorasExtras {
-        // Busca o usuário
         val usuario = usuariosRepository.findById(dto.usuarioId)
             .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${dto.usuarioId}") }
 
-        // Valida se o horário final não é anterior ao inicial
         if (dto.horasAte.isBefore(dto.horasDe)) {
             throw RegraDeNegocioException("O horário de término não pode ser anterior ao horário de início.")
         }
 
-        // **Validação de vínculo com projeto (usuario)**
-        val projetosDoUsuario = projetosRepository.findByUsuarios_Id(usuario.id)
-            .map { it.id } // ou it.codigoProjeto, dependendo do nome do campo
+        val projeto = projetosRepository.findById(dto.projeto)
+            .orElseThrow { RegraDeNegocioException("Projeto não encontrado com id: ${dto.projeto}") }
 
-        // **Validação de vínculo com projeto (gerente)**
-        val projetosDoGerente = projetosRepository.findByGerentes_Id(usuario.id)
-            .map { it.id }
-
-        if (!projetosDoUsuario.contains(dto.codigoProjeto) && !projetosDoGerente.contains(dto.codigoProjeto)) {
-            throw RegraDeNegocioException("Usuário não está vinculado ao projeto ${dto.codigoProjeto}")
+        val usuarioVinculado = projeto.usuarios.any { it.id == usuario.id } || projeto.gerentes.any { it.id == usuario.id }
+        if (!usuarioVinculado) {
+            throw RegraDeNegocioException("Usuário não está vinculado ao projeto ${dto.projeto}")
         }
 
-        // Verifica se já existe solicitação do usuário para a data
         val existente = solicitarHorasExtrasRepository.findByUsuarioIdAndData(usuario.id, dto.data)
 
         return if (existente != null) {
             existente.apply {
                 horasDe = dto.horasDe
                 horasAte = dto.horasAte
-                codigoProjeto = dto.codigoProjeto
+                this.projeto = projeto
                 justificativa = dto.justificativa
                 observacao = dto.observacao
                 foiSolicitada = true
@@ -65,10 +61,10 @@ class SolicitarHorasExtrasService(
         } else {
             val novaSolicitacao = SolicitacaoHorasExtras(
                 usuario = usuario,
+                projeto = projeto,
                 data = dto.data,
                 horasDe = dto.horasDe,
                 horasAte = dto.horasAte,
-                codigoProjeto = dto.codigoProjeto,
                 justificativa = dto.justificativa,
                 observacao = dto.observacao,
                 foiSolicitada = true,
@@ -79,6 +75,7 @@ class SolicitarHorasExtrasService(
             solicitarHorasExtrasRepository.save(novaSolicitacao)
         }
     }
+
 
 
 //    fun gerarHorasExtrasAutomaticas(usuarioId: Int, data: LocalDate) {
@@ -205,27 +202,43 @@ class SolicitarHorasExtrasService(
 
     fun atualizarHorasExtras(id: Int, dto: SolicitacaoHorasExtrasUpdateRequestDTO): SolicitacaoHorasExtras {
         val horasExtrasExistente = solicitarHorasExtrasRepository.findById(id)
-            .orElseThrow { RuntimeException("Horas extras não encontrada com id: $id") }
+            .orElseThrow { NenhumaHoraExtraEncontradaException("Horas extras não encontrada com id: $id") }
 
         val usuario = dto.usuarioId?.let {
             usuariosRepository.findById(it)
                 .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $it") }
         } ?: horasExtrasExistente.usuario
 
+        val projetoAtualizado = dto.projeto?.let { projetoId ->
+            val projeto = projetosRepository.findById(projetoId)
+                .orElseThrow { RegraDeNegocioException("Projeto não encontrado com id: $projetoId") }
+
+            val usuarioVinculado = projeto.usuarios.any { it.id == usuario.id } ||
+                    projeto.gerentes.any { it.id == usuario.id }
+
+            if (!usuarioVinculado) {
+                throw RegraDeNegocioException("O usuário ${usuario.id} não está vinculado ao projeto $projetoId")
+            }
+
+            projeto
+        } ?: horasExtrasExistente.projeto
+
         val horasExtrasAtualizada = horasExtrasExistente.copy(
             usuario = usuario,
             data = dto.data ?: horasExtrasExistente.data,
             horasDe = dto.horasDe ?: horasExtrasExistente.horasDe,
             horasAte = dto.horasAte ?: horasExtrasExistente.horasAte,
-            codigoProjeto = dto.codigoProjeto ?: horasExtrasExistente.codigoProjeto,
+            projeto = projetoAtualizado, // agora é do tipo Projeto
             justificativa = dto.justificativa ?: horasExtrasExistente.justificativa,
             observacao = dto.observacao ?: horasExtrasExistente.observacao,
             foiSolicitada = dto.foiSolicitada ?: horasExtrasExistente.foiSolicitada,
             foiFeita = dto.foiFeita ?: horasExtrasExistente.foiFeita,
+            foiAprovada = dto.foiAprovada ?: horasExtrasExistente.foiAprovada
         )
 
         return solicitarHorasExtrasRepository.save(horasExtrasAtualizada)
     }
+
 
     fun cancelarHorasExtras(id: Int) {
         val horasExtras = solicitarHorasExtrasRepository.findById(id)
@@ -242,7 +255,6 @@ class SolicitarHorasExtrasService(
         foiSolicitado: Boolean? = null
     ): List<SolicitacaoHorasExtras> {
 
-        // Valida e parse das datas
         val inicio = try {
             LocalDate.parse(dataInicio, formatter)
         } catch (e: DateTimeParseException) {
@@ -255,14 +267,12 @@ class SolicitarHorasExtrasService(
             throw InvalidDateFormatException("Data de fim '$dataFim' está em formato inválido. Use dd/MM/yyyy.")
         }
 
-        // Busca filtrando pelo status, se fornecido
         val horasExtrasList = if (foiSolicitado != null) {
             solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiSolicitada(usuarioId, inicio, fim, foiSolicitado)
         } else {
             solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim)
         }
 
-        // Lança exceção se não encontrar nada
         if (horasExtrasList.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException(
                 "Nenhuma hora extra ${foiSolicitado?.let { if (it) "solicitada" else "não solicitada" } ?: ""} encontrada para o usuário $usuarioId entre $dataInicio e $dataFim."
@@ -289,15 +299,21 @@ class SolicitarHorasExtrasService(
                 RankingHorasExtrasDTO(
                     usuarioId = usuario.id,
                     nome = usuario.nome,
-                    totalHorasExtras = totalHoras
+                    totalHoras = totalHoras
                 )
             }
-            .sortedByDescending { it.totalHorasExtras }
+            .sortedByDescending { it.totalHoras }
 
         return horasPorUsuario
     }
 
-
+    fun rankingUsuariosPorProjeto(projetoId: Int): List<RankingHorasExtrasProjetoDTO> {
+        val ranking = solicitarHorasExtrasRepository.buscarRankingPorProjeto(projetoId)
+        if (ranking.isEmpty()) {
+            throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra encontrada para o projeto com id $projetoId")
+        }
+        return ranking
+    }
 
 
 }

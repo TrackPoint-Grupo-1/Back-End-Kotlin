@@ -1,6 +1,7 @@
 package com.trackpoint.demo.DTO
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.trackpoint.demo.Entity.Projeto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
@@ -17,7 +18,7 @@ data class SolicitacaoHorasExtrasCreateRequestDTO(
     @field:NotNull(message = "O horário 'até' é obrigatório")
     val horasAte: LocalTime,
     @field:NotNull(message = "O código do projeto é obrigatório")
-    val codigoProjeto: Int,
+    val projeto: Int,
     @field:NotBlank(message = "O motivo não pode estar vazio")
     val justificativa: String,
     val observacao: String
