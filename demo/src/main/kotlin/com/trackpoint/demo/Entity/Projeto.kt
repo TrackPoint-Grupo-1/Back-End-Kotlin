@@ -36,6 +36,5 @@ class Projeto(
     var previsaoEntrega: LocalDate,
     @Enumerated(EnumType.STRING)
     var status : StatusProjeto,
-    var horasTotal : Double = 0.0,
     val criadoEm: LocalDateTime = LocalDateTime.now()
 )

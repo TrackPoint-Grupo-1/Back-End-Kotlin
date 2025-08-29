@@ -17,4 +17,8 @@ interface ProjetoRepository : JpaRepository<Projeto, Int> {
 
     fun findByStatus(status: StatusProjeto): List<Projeto>
 
+    fun findByUsuarios_Id(usuarioId: Int): List<Projeto>
+
+    fun findByGerentes_Id(usuarioId: Int): List<Projeto>
+
 }

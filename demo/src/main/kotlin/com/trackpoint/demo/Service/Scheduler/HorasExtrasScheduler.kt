@@ -1,10 +1,9 @@
 package com.trackpoint.demo.Service.Scheduler
 
-import com.trackpoint.demo.Repository.HorasExtrasRepository
+import com.trackpoint.demo.Repository.SolicitarHorasExtrasRepository
 import com.trackpoint.demo.Repository.PontosRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
-import com.trackpoint.demo.Service.HorasExtrasService
-import org.springframework.scheduling.annotation.Scheduled
+import com.trackpoint.demo.Service.SolicitarHorasExtrasService
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -13,9 +12,9 @@ import java.time.LocalTime
 @Service
 class HorasExtrasScheduler(
     private val usuariosRepository: UsuariosRepository,
-    private val horasExtrasService: HorasExtrasService,
+    private val solicitarHorasExtrasService: SolicitarHorasExtrasService,
     private val pontosRepository: PontosRepository,
-    private val horasExtrasRepository: HorasExtrasRepository
+    private val solicitarHorasExtrasRepository: SolicitarHorasExtrasRepository
 ) {
 
     // @Scheduled(cron = "0 50 23 * * *")
@@ -53,7 +52,7 @@ class HorasExtrasScheduler(
 
                 println("📝 Último ponto do dia: Entrada=${ultimoPonto.horaEntrada}, Saída=${ultimoPonto.horaSaida}")
 
-                val horasExtras = horasExtrasRepository.findByUsuarioIdAndData(usuario.id, hoje)
+                val horasExtras = solicitarHorasExtrasRepository.findByUsuarioIdAndData(usuario.id, hoje)
                 if (horasExtras != null) {
                     println("⏱️ Horas extras registradas previamente: ${horasExtras.horasDe} → ${horasExtras.horasAte} (Solicitadas: ${horasExtras.foiSolicitada}, Feitas: ${horasExtras.foiFeita})")
                 } else {

@@ -1,14 +1,17 @@
 package com.trackpoint.demo.Service
 
+import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
 import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
 import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Exeptions.InvalidDateFormatException
 import com.trackpoint.demo.Exeptions.NenhumaHoraExtraEncontradaException
+import com.trackpoint.demo.Exeptions.RegraDeNegocioException
 import com.trackpoint.demo.Exeptions.UsuarioNotFoundException
-import com.trackpoint.demo.Repository.HorasExtrasRepository
+import com.trackpoint.demo.Repository.SolicitarHorasExtrasRepository
 import com.trackpoint.demo.Repository.PontosRepository
+import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -18,21 +21,37 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 @Service
-class HorasExtrasService(
-    private val horasExtrasRepository: HorasExtrasRepository,
+class SolicitarHorasExtrasService(
+    private val solicitarHorasExtrasRepository: SolicitarHorasExtrasRepository,
     private val usuariosRepository: UsuariosRepository,
-    private val pontosRepository: PontosRepository
+    private val pontosRepository: PontosRepository,
+    private val projetosRepository: ProjetoRepository
 ) {
 
     fun criarHorasExtras(dto: SolicitacaoHorasExtrasCreateRequestDTO): SolicitacaoHorasExtras {
+        // Busca o usuário
         val usuario = usuariosRepository.findById(dto.usuarioId)
             .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${dto.usuarioId}") }
 
+        // Valida se o horário final não é anterior ao inicial
         if (dto.horasAte.isBefore(dto.horasDe)) {
-            throw IllegalArgumentException("O horário de término não pode ser anterior ao horário de início.")
+            throw RegraDeNegocioException("O horário de término não pode ser anterior ao horário de início.")
         }
 
-        val existente = horasExtrasRepository.findByUsuarioIdAndData(usuario.id, dto.data)
+        // **Validação de vínculo com projeto (usuario)**
+        val projetosDoUsuario = projetosRepository.findByUsuarios_Id(usuario.id)
+            .map { it.id } // ou it.codigoProjeto, dependendo do nome do campo
+
+        // **Validação de vínculo com projeto (gerente)**
+        val projetosDoGerente = projetosRepository.findByGerentes_Id(usuario.id)
+            .map { it.id }
+
+        if (!projetosDoUsuario.contains(dto.codigoProjeto) && !projetosDoGerente.contains(dto.codigoProjeto)) {
+            throw RegraDeNegocioException("Usuário não está vinculado ao projeto ${dto.codigoProjeto}")
+        }
+
+        // Verifica se já existe solicitação do usuário para a data
+        val existente = solicitarHorasExtrasRepository.findByUsuarioIdAndData(usuario.id, dto.data)
 
         return if (existente != null) {
             existente.apply {
@@ -41,9 +60,10 @@ class HorasExtrasService(
                 codigoProjeto = dto.codigoProjeto
                 justificativa = dto.justificativa
                 observacao = dto.observacao
-            }.also { horasExtrasRepository.save(it) }
+                foiSolicitada = true
+            }.also { solicitarHorasExtrasRepository.save(it) }
         } else {
-            val solicitacaoHorasExtras = SolicitacaoHorasExtras(
+            val novaSolicitacao = SolicitacaoHorasExtras(
                 usuario = usuario,
                 data = dto.data,
                 horasDe = dto.horasDe,
@@ -56,7 +76,7 @@ class HorasExtrasService(
                 foiFeita = false,
                 criadoEm = LocalDate.now()
             )
-            horasExtrasRepository.save(solicitacaoHorasExtras)
+            solicitarHorasExtrasRepository.save(novaSolicitacao)
         }
     }
 
@@ -164,11 +184,11 @@ class HorasExtrasService(
     }
 
     fun listarTodasHorasExtras(): List<SolicitacaoHorasExtras> {
-        return horasExtrasRepository.findAll()
+        return solicitarHorasExtrasRepository.findAll()
     }
 
     fun listarTodasHorasQueForamSolicitada(): List<SolicitacaoHorasExtras> {
-        val horas = horasExtrasRepository.findByFoiSolicitadaTrue()
+        val horas = solicitarHorasExtrasRepository.findByFoiSolicitadaTrue()
         if (horas.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra solicitada foi encontrada.")
         }
@@ -176,7 +196,7 @@ class HorasExtrasService(
     }
 
     fun listarTodasHorasQueNaoForamSolicitada(): List<SolicitacaoHorasExtras> {
-        val horas = horasExtrasRepository.findByFoiSolicitadaFalse()
+        val horas = solicitarHorasExtrasRepository.findByFoiSolicitadaFalse()
         if (horas.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra não solicitada foi encontrada.")
         }
@@ -184,7 +204,7 @@ class HorasExtrasService(
     }
 
     fun atualizarHorasExtras(id: Int, dto: SolicitacaoHorasExtrasUpdateRequestDTO): SolicitacaoHorasExtras {
-        val horasExtrasExistente = horasExtrasRepository.findById(id)
+        val horasExtrasExistente = solicitarHorasExtrasRepository.findById(id)
             .orElseThrow { RuntimeException("Horas extras não encontrada com id: $id") }
 
         val usuario = dto.usuarioId?.let {
@@ -204,13 +224,13 @@ class HorasExtrasService(
             foiFeita = dto.foiFeita ?: horasExtrasExistente.foiFeita,
         )
 
-        return horasExtrasRepository.save(horasExtrasAtualizada)
+        return solicitarHorasExtrasRepository.save(horasExtrasAtualizada)
     }
 
     fun cancelarHorasExtras(id: Int) {
-        val horasExtras = horasExtrasRepository.findById(id)
+        val horasExtras = solicitarHorasExtrasRepository.findById(id)
             .orElseThrow { NenhumaHoraExtraEncontradaException("Horas extras não encontrada com id: $id") }
-        horasExtrasRepository.delete(horasExtras)
+        solicitarHorasExtrasRepository.delete(horasExtras)
     }
 
     private val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -237,9 +257,9 @@ class HorasExtrasService(
 
         // Busca filtrando pelo status, se fornecido
         val horasExtrasList = if (foiSolicitado != null) {
-            horasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiSolicitada(usuarioId, inicio, fim, foiSolicitado)
+            solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiSolicitada(usuarioId, inicio, fim, foiSolicitado)
         } else {
-            horasExtrasRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim)
+            solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim)
         }
 
         // Lança exceção se não encontrar nada
@@ -251,5 +271,33 @@ class HorasExtrasService(
 
         return horasExtrasList
     }
+
+    fun rankingFuncionariosHorasExtrasNoMes(): List<RankingHorasExtrasDTO> {
+        val solicitacoes = solicitarHorasExtrasRepository.findHorasExtrasFeitasNoMes()
+
+        if (solicitacoes.isEmpty()) {
+            throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra feita encontrada no mês atual.")
+        }
+
+        val horasPorUsuario = solicitacoes
+            .groupBy { it.usuario }
+            .map { (usuario, lista) ->
+                val totalHoras = lista.sumOf { solicitacao ->
+                    val minutos = Duration.between(solicitacao.horasDe, solicitacao.horasAte).toMinutes()
+                    if (minutos > 0) minutos / 60.0 else 0.0
+                }
+                RankingHorasExtrasDTO(
+                    usuarioId = usuario.id,
+                    nome = usuario.nome,
+                    totalHorasExtras = totalHoras
+                )
+            }
+            .sortedByDescending { it.totalHorasExtras }
+
+        return horasPorUsuario
+    }
+
+
+
 
 }

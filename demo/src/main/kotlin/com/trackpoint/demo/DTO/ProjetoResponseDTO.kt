@@ -13,7 +13,6 @@ class ProjetoResponseDTO(
     val usuarios: List<String>,
     val previsaoEntrega: LocalDate,
     val status : StatusProjeto,
-    val horasTotal : Double,
     val criadoEm: LocalDateTime
 ) {
     companion object {
@@ -26,7 +25,6 @@ class ProjetoResponseDTO(
                 usuarios = projeto.usuarios.map {  "id: ${it.id},email: ${it.email},nome: ${it.nome}" },
                 previsaoEntrega = projeto.previsaoEntrega,
                 status = projeto.status,
-                horasTotal = projeto.horasTotal,
                 criadoEm = projeto.criadoEm
             )
         }
