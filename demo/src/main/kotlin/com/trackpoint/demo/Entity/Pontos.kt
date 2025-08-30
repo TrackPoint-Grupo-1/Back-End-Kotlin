@@ -11,7 +11,7 @@ data class Pontos(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Int = 0,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id")
     val usuario: Usuarios,
 
@@ -24,5 +24,9 @@ data class Pontos(
 
     val observacoes: String? = null,
 
-    val turno: String = UUID.randomUUID().toString()
+    val turno: String = UUID.randomUUID().toString(),
+
+    val modificado: Boolean = false,
+
+    val modificadoEm: LocalDateTime? = null
 )

@@ -6,6 +6,8 @@ import java.time.LocalDateTime
 data class PontosUpdateRequestDTO(
     val tipo: TipoPonto? = null,
     val horario: LocalDateTime? = null,
-    val localidades: List<String>? = null,
-    val observacoes: String? = null
+    val localidades: String? = null,
+    val observacoes: String? = null,
+    val modificao: Boolean? = true,
+    val modificadoEm: LocalDateTime? = LocalDateTime.now()
 )

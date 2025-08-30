@@ -16,7 +16,7 @@ data class SolicitacaoHorasExtras(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "projeto_id")
-    var projeto: Projeto,
+    var projeto: Projeto? = null, // agora opcional
 
     val data: LocalDate,
     var horasDe: LocalTime,
@@ -29,5 +29,7 @@ data class SolicitacaoHorasExtras(
     var foiSolicitada: Boolean,
     var foiFeita: Boolean = false,
     var foiAprovada: Boolean = false,
-    val criadoEm: LocalDate = LocalDate.now()
+    val criadoEm: LocalDate = LocalDate.now(),
+
+    var turno: String? = null // UUID do ponto
 )

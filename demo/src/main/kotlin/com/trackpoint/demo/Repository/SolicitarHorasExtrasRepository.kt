@@ -3,10 +3,13 @@ package com.trackpoint.demo.Repository
 import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
 import com.trackpoint.demo.DTO.RankingHorasExtrasProjetoDTO
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
+import com.trackpoint.demo.Entity.Usuarios
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 interface SolicitarHorasExtrasRepository : JpaRepository<SolicitacaoHorasExtras, Int>{
     fun findByFoiSolicitadaTrue(): List<SolicitacaoHorasExtras>
@@ -47,5 +50,24 @@ interface SolicitarHorasExtrasRepository : JpaRepository<SolicitacaoHorasExtras,
     )
     fun buscarRankingPorProjeto(@Param("projetoId") projetoId: Int): List<RankingHorasExtrasProjetoDTO>
 
+    @Query("""
+        SELECT s 
+        FROM SolicitacaoHorasExtras s
+        WHERE s.foiFeita = false 
+          AND s.horasDe BETWEEN :inicio AND :fim
+    """)
+    fun findByFoiFeitaFalse(): List<SolicitacaoHorasExtras>
+
+    fun findByUsuarioAndData(
+        usuario: Usuarios,
+        data: LocalDate
+    ): List<SolicitacaoHorasExtras>
+
+    fun findByUsuarioAndDataAndHorasDeAndHorasAte(
+        usuario: Usuarios,
+        data: LocalDate,
+        horasDe: LocalTime,
+        horasAte: LocalTime
+    ): List<SolicitacaoHorasExtras>
 
 }

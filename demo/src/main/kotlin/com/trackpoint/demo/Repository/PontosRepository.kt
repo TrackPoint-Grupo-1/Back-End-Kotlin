@@ -32,5 +32,14 @@ interface PontosRepository : JpaRepository<Pontos, Int>{
 """)
     fun findLastOpenTurn(usuario: Usuarios): Pontos?
 
+    fun findByHorarioBetween(inicio: LocalDateTime, fim: LocalDateTime): List<Pontos>
+
+    fun findByUsuarioIdAndHorarioBetween(
+        usuarioId: Long,
+        inicio: LocalDateTime,
+        fim: LocalDateTime
+    ): List<Pontos>
+
+    fun findByUsuario(usuario: Usuarios): List<Pontos>
 
 }

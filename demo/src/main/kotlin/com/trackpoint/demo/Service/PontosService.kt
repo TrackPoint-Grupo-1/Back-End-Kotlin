@@ -1,14 +1,20 @@
 package com.trackpoint.demo.Service
 
 import com.trackpoint.demo.DTO.PontosCreateRequestDTO
+import com.trackpoint.demo.DTO.PontosFaltantesDTO
 import com.trackpoint.demo.DTO.PontosResponseDTO
+import com.trackpoint.demo.DTO.PontosUpdateRequestDTO
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Enum.TipoPonto
 import com.trackpoint.demo.Exeptions.*
 import com.trackpoint.demo.Repository.PontosRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.*
 
 @Service
@@ -87,4 +93,140 @@ class PontosService(
         val salvo = pontosRepository.save(ponto)
         return PontosResponseDTO.fromEntity(salvo)
     }
+
+    fun atualizarPonto(id: Int, dto: PontosUpdateRequestDTO): PontosResponseDTO {
+        val pontoExistente = pontosRepository.findById(id)
+            .orElseThrow { PontosNaoEncontradosException("Ponto não encontrado com id: $id") }
+
+        val usuario = usuariosRepository.findById(id)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${id}") }
+
+        val horario = dto.horario ?: pontoExistente.horario
+
+        val pontoAtualizado = pontoExistente.copy(
+            usuario = usuario,
+            tipo = dto.tipo ?: pontoExistente.tipo,
+            horario = horario,
+            localidade = dto.localidades,
+            observacoes = dto.observacoes,
+            modificado = true,
+            modificadoEm = LocalDateTime.now()
+        )
+
+        val salvo = pontosRepository.save(pontoAtualizado)
+        return PontosResponseDTO.fromEntity(salvo)
+
+    }
+
+    fun listarPontosPorUsuarioPorData(usuarioId: Int, dataInicio: LocalDateTime, dataFim: LocalDateTime): List<PontosResponseDTO> {
+        val usuario = usuariosRepository.findById(usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
+
+        val pontos = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(usuario, dataInicio, dataFim)
+
+        if (pontos.isEmpty()) {
+            throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário $usuarioId no período especificado.")
+        }
+
+        return pontos.map { PontosResponseDTO.fromEntity(it) }
+    }
+
+
+    fun listarPontosPorUsuarioPorPeriodo(usuarioId: Int, dataInicio: LocalDateTime, dataFim: LocalDateTime): List<PontosResponseDTO> {
+        val usuario = usuariosRepository.findById(usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
+
+        val pontos = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(usuario, dataInicio, dataFim)
+
+        if (pontos.isEmpty()) {
+            throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário $usuarioId no período especificado.")
+        }
+
+        return pontos.map { PontosResponseDTO.fromEntity(it) }
+    }
+
+    fun adicionarPontosFaltantes(
+        usuarioId: Int,
+        data: String,
+        entradaHorario: String?,
+        almocoHorario: String?,
+        voltaAlmocoHorario: String?,
+        saidaHorario: String?
+    ): List<PontosResponseDTO> {
+
+        val usuario = usuariosRepository.findById(usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
+
+        val dataFormatada = LocalDate.parse(data, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
+        // Função auxiliar para validar horário
+        fun parseHorario(horario: String?, tipo: TipoPonto): LocalTime? {
+            return horario?.let {
+                try {
+                    LocalTime.parse(it)
+                } catch (e: DateTimeParseException) {
+                    throw RegraDeNegocioException("Horário inválido para $tipo: $it. Use HH:mm")
+                }
+            }
+        }
+
+        val entrada = parseHorario(entradaHorario, TipoPonto.ENTRADA)
+        val almoco = parseHorario(almocoHorario, TipoPonto.ALMOCO)
+        val voltaAlmoco = parseHorario(voltaAlmocoHorario, TipoPonto.VOLTA_ALMOCO)
+        val saida = parseHorario(saidaHorario, TipoPonto.SAIDA)
+
+        // Validação da sequência lógica
+        if (entrada != null && almoco != null && entrada >= almoco) throw RegraDeNegocioException("ALMOÇO deve ser após ENTRADA")
+        if (almoco != null && voltaAlmoco != null && almoco >= voltaAlmoco) throw RegraDeNegocioException("VOLTA_ALMOCO deve ser após ALMOÇO")
+        if (voltaAlmoco != null && saida != null && voltaAlmoco >= saida) throw RegraDeNegocioException("SAÍDA deve ser após VOLTA_ALMOCO")
+        if (entrada != null && saida != null && entrada >= saida) throw RegraDeNegocioException("SAÍDA deve ser após ENTRADA")
+
+        // Buscar pontos existentes
+        val pontosExistentes = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(
+            usuario, dataFormatada.atStartOfDay(), dataFormatada.atTime(23, 59, 59)
+        ).toMutableList()
+
+        val turno = pontosExistentes.firstOrNull()?.turno ?: UUID.randomUUID().toString()
+        val tiposExistentes = pontosExistentes.map { it.tipo }.toSet()
+        val novosPontos = mutableListOf<Pontos>()
+
+        // Adicionar pontos faltantes
+        fun adicionarSeFaltante(tipo: TipoPonto, horario: LocalTime?) {
+            if (horario != null && !tiposExistentes.contains(tipo)) {
+                val ponto = Pontos(usuario = usuario, tipo = tipo, horario = dataFormatada.atTime(horario), turno = turno)
+                novosPontos.add(pontosRepository.save(ponto))
+            }
+        }
+
+        adicionarSeFaltante(TipoPonto.ENTRADA, entrada)
+        adicionarSeFaltante(TipoPonto.ALMOCO, almoco)
+        adicionarSeFaltante(TipoPonto.VOLTA_ALMOCO, voltaAlmoco)
+        adicionarSeFaltante(TipoPonto.SAIDA, saida)
+
+        return novosPontos.map { PontosResponseDTO.fromEntity(it) }
+    }
+
+    fun listarPontosFaltantesPorUsuario(usuarioId: Int): List<PontosFaltantesDTO> {
+        val usuario = usuariosRepository.findById(usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
+
+        return pontosRepository.findByUsuario(usuario)
+            .groupBy { it.usuario.id to it.turno }
+            .mapNotNull { (key, pontos) ->
+                val turno = key.second
+                val tiposPresentes = pontos.map { it.tipo }.toSet()
+                val dataDoTurno = pontos.minByOrNull { it.horario }?.horario?.toLocalDate() ?: return@mapNotNull null
+
+                val tiposFaltantes = TipoPonto.values().filter { it !in tiposPresentes }
+                if (tiposFaltantes.isEmpty()) null
+                else PontosFaltantesDTO(
+                    usuarioId = usuarioId,
+                    turno = turno,
+                    data = dataDoTurno,
+                    tiposFaltantes = tiposFaltantes
+                )
+            }
+    }
+
+
 }

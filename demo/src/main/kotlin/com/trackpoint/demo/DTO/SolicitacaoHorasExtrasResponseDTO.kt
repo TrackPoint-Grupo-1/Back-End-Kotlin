@@ -14,7 +14,7 @@ data class SolicitacaoHorasExtrasResponseDTO(
     val horasDe: LocalTime,
     @JsonFormat(pattern = "HH:mm")
     val horasAte: LocalTime,
-    val codigoProjeto: Int,
+    val codigoProjeto: Int?,
     val justificativa: String,
     val observacao: String,
     val foiSolicitado: Boolean,
@@ -28,7 +28,7 @@ data class SolicitacaoHorasExtrasResponseDTO(
         data = solicitacaoHorasExtras.data,
         horasDe = solicitacaoHorasExtras.horasDe,
         horasAte = solicitacaoHorasExtras.horasAte,
-        codigoProjeto = solicitacaoHorasExtras.projeto.id,
+        codigoProjeto = solicitacaoHorasExtras.projeto?.id,
         justificativa = solicitacaoHorasExtras.justificativa,
         observacao = solicitacaoHorasExtras.observacao,
         foiSolicitado = solicitacaoHorasExtras.foiSolicitada,
