@@ -66,17 +66,31 @@ class PontosController(private val pontosService: PontosService) {
         }
     }
 
-
-
     @GetMapping("/{usuarioId}/faltantes")
     fun listarPontosFaltantesPorUsuario(@PathVariable usuarioId: Int): ResponseEntity<List<PontosFaltantesDTO>> {
         val pontosFaltantes = pontosService.listarPontosFaltantesPorUsuario(usuarioId)
         return if (pontosFaltantes.isEmpty()) {
-            ResponseEntity.noContent().build() // 204 No Content se não houver pontos faltantes
+            ResponseEntity.noContent().build()
         } else {
-            ResponseEntity.ok(pontosFaltantes) // 200 OK com a lista
+            ResponseEntity.ok(pontosFaltantes)
         }
     }
+
+    @GetMapping("{usuarioId}/periodo")
+    fun listarPontosPorUsuarioEPeriodo(
+        @PathVariable usuarioId: Int,
+        @RequestParam dataInicio: String,
+        @RequestParam dataFim: String
+    ): ResponseEntity<List<PontosResponseDTO>> {
+        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val inicio = LocalDate.parse(dataInicio, formatter)
+        val fim = LocalDate.parse(dataFim, formatter)
+
+        val pontos = pontosService.listarPontosPorUsuarioEPeriodo(usuarioId, inicio, fim)
+        return ResponseEntity.ok(pontos)
+    }
+
+
 
 
 }

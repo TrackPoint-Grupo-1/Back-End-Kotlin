@@ -6,7 +6,6 @@ import com.trackpoint.demo.Enum.TipoPonto
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Repository
@@ -35,11 +34,18 @@ interface PontosRepository : JpaRepository<Pontos, Int>{
     fun findByHorarioBetween(inicio: LocalDateTime, fim: LocalDateTime): List<Pontos>
 
     fun findByUsuarioIdAndHorarioBetween(
-        usuarioId: Long,
+        usuarioId: Int,
         inicio: LocalDateTime,
         fim: LocalDateTime
     ): List<Pontos>
 
     fun findByUsuario(usuario: Usuarios): List<Pontos>
+
+    fun findByUsuarioAndHorarioBetween(
+        usuario: Usuarios,
+        inicio: LocalDateTime,
+        fim: LocalDateTime
+    ): List<Pontos>
+
 
 }

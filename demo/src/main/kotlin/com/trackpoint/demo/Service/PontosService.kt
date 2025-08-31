@@ -228,5 +228,30 @@ class PontosService(
             }
     }
 
+    fun listarPontosPorUsuarioEPeriodo(usuarioId: Int, dataInicio: LocalDate, dataFim: LocalDate): List<PontosResponseDTO> {
+        val usuario = usuariosRepository.findById(usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
+
+        val pontos = pontosRepository.findByUsuarioAndHorarioBetween(usuario, dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59))
+
+        if (pontos.isEmpty()) {
+            throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário $usuarioId no período de $dataInicio a $dataFim.")
+        }
+
+        val diasPeriodo = dataInicio.datesUntil(dataFim.plusDays(1)).toList()
+        val pontosPorDia = pontos.groupBy { it.horario.toLocalDate() }
+
+        val pontosFaltantes = diasPeriodo.filter { dia ->
+            val registros = pontosPorDia[dia] ?: emptyList()
+            registros.size < 2
+        }
+
+        if (pontosFaltantes.isNotEmpty()) {
+            println("Usuário $usuarioId tem dias com pontos faltantes: $pontosFaltantes")
+        }
+
+        return pontos.map { PontosResponseDTO.fromEntity(it) }
+    }
+
 
 }

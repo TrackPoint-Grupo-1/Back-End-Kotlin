@@ -11,7 +11,8 @@ data class PontosResponseDTO(
     val tipo: TipoPonto,
     val horario: LocalDateTime,
     val localidade: String?,
-    val observacoes: String?
+    val observacoes: String?,
+    val turno: String
 ) {
     companion object {
         fun fromEntity(ponto: Pontos): PontosResponseDTO {
@@ -21,7 +22,8 @@ data class PontosResponseDTO(
                 tipo = ponto.tipo,
                 horario = ponto.horario,
                 localidade = ponto.localidade ?: "Não Informado",
-                observacoes = ponto.observacoes ?: "Não Informado"
+                observacoes = ponto.observacoes ?: "Não Informado",
+                turno = ponto.turno
             )
         }
     }
