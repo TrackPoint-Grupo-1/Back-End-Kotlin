@@ -13,5 +13,5 @@ interface UsuariosRepository : JpaRepository<Usuarios, Int> {
     override fun deleteById(id: Int)
     fun existsByEmail(email: String): Boolean
     fun findByLogadoTrue(): List<Usuarios>
-
+    fun findByEmailAndSenha(email: String, senha: String): Usuarios?
 }

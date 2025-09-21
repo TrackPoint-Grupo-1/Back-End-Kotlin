@@ -8,6 +8,8 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.*
+import kotlin.NoSuchElementException
 
 @RestController
 @RequestMapping("/usuarios")
@@ -92,6 +94,15 @@ class UsuariosController (private val usuariosService: UsuariosService){
             ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(mapOf("message" to "Usuário com ID $id está inativo ou já está deslogado"))
         }
+    }
+
+    @GetMapping("/preLogin")
+    fun listarUsuariosPreLogin(
+        @RequestHeader("email") email: String,
+        @RequestHeader("senha") senha: String
+    ): ResponseEntity<UsuariosResponseDTO> {
+        val usuarioResponse = usuariosService.listarUsuariosPreLogin(email, senha)
+        return ResponseEntity.ok(usuarioResponse)
     }
 
 }

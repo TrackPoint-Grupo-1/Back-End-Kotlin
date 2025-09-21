@@ -9,6 +9,7 @@ import com.trackpoint.demo.Exeptions.UsuarioNotFoundException
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import java.util.*
 
 @Service
 class UsuariosService(private val usuariosRepository: UsuariosRepository) {
@@ -124,5 +125,13 @@ class UsuariosService(private val usuariosRepository: UsuariosRepository) {
 
         return true
     }
+
+    fun listarUsuariosPreLogin(email: String, senha: String): UsuariosResponseDTO {
+        val usuario = usuariosRepository.findByEmailAndSenha(email, senha)
+            ?: throw UsuarioNotFoundException("Nenhum usuário encontrado com o email e senha fornecidos")
+
+        return UsuariosResponseDTO(usuario)
+    }
+
 
 }
