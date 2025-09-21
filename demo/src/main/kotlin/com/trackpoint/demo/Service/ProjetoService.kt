@@ -86,6 +86,17 @@ class ProjetoService(
         return projetos
     }
 
+    fun buscarProjetosPorFuncionarioId(id: Int, status: StatusProjeto): List<Projeto> {
+
+        val projetosStatus = projetoRepository.findByStatusAndUsuarios_IdOrGerentes_Id(status, id, id)
+
+        if (projetosStatus.isEmpty()) {
+            throw FuncionarioNaoEncontradoException("Nenhum projeto encontrado para o funcionário/gerente com ID: $id e status: $status")
+        }
+
+        return projetosStatus
+    }
+
     fun atualizarStatusProjeto(id: Int, novoStatus: String): ProjetoResponseDTO {
         val statusValido = try {
             StatusProjeto.valueOf(novoStatus.uppercase())

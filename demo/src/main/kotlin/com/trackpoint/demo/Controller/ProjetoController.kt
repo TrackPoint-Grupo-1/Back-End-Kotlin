@@ -53,6 +53,15 @@ class ProjetoController(
         return ResponseEntity.ok(projetos)
     }
 
+    @GetMapping("/funcionario/{id}")
+    fun buscarPorIdFuncionario(
+        @RequestParam (required = true) status: StatusProjeto,
+        @PathVariable id: Int
+    ): ResponseEntity<List<Projeto>> {
+        val projetos = projetoService.buscarProjetosPorFuncionarioId(id, status)
+        return ResponseEntity.ok(projetos)
+    }
+
     @PutMapping("/{id}/atualizar-status")
     fun atualizarStatusProjeto(
         @PathVariable id: Int,
