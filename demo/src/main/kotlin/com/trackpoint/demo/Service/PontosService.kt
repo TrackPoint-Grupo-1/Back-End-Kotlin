@@ -1,9 +1,6 @@
 package com.trackpoint.demo.Service
 
-import com.trackpoint.demo.DTO.PontosCreateRequestDTO
-import com.trackpoint.demo.DTO.PontosFaltantesDTO
-import com.trackpoint.demo.DTO.PontosResponseDTO
-import com.trackpoint.demo.DTO.PontosUpdateRequestDTO
+import com.trackpoint.demo.DTO.*
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Enum.TipoPonto
 import com.trackpoint.demo.Exeptions.*
@@ -228,30 +225,62 @@ class PontosService(
             }
     }
 
-    fun listarPontosPorUsuarioEPeriodo(usuarioId: Int, dataInicio: LocalDate, dataFim: LocalDate): List<PontosResponseDTO> {
+    fun listarPontosPorUsuarioEPeriodo(
+        usuarioId: Int,
+        dataInicio: LocalDate,
+        dataFim: LocalDate
+    ): TotalHorasDTO {
         val usuario = usuariosRepository.findById(usuarioId)
             .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: $usuarioId") }
 
-        val pontos = pontosRepository.findByUsuarioAndHorarioBetween(usuario, dataInicio.atStartOfDay(), dataFim.atTime(23, 59, 59))
+        val pontos = pontosRepository.findByUsuarioAndHorarioBetween(
+            usuario,
+            dataInicio.atStartOfDay(),
+            dataFim.atTime(23, 59, 59)
+        )
 
         if (pontos.isEmpty()) {
             throw PontosNaoEncontradosException("Nenhum ponto encontrado para o usuário $usuarioId no período de $dataInicio a $dataFim.")
         }
 
-        val diasPeriodo = dataInicio.datesUntil(dataFim.plusDays(1)).toList()
-        val pontosPorDia = pontos.groupBy { it.horario.toLocalDate() }
+        // Converter para DTO
+        val listaDTO = pontos.map { PontosResponseDTO.fromEntity(it) }
 
-        val pontosFaltantes = diasPeriodo.filter { dia ->
-            val registros = pontosPorDia[dia] ?: emptyList()
-            registros.size < 2
-        }
+        // ---- Cálculo das horas totais ----
+        val totalHoras = calcularHorasTrabalhadas(pontos)
 
-        if (pontosFaltantes.isNotEmpty()) {
-            println("Usuário $usuarioId tem dias com pontos faltantes: $pontosFaltantes")
-        }
+        val rankingHorasExtrasDTO = RankingHorasExtrasDTO(
+            usuarioId = usuario.id,
+            nome = usuario.nome,
+            totalHoras = totalHoras
+        )
 
-        return pontos.map { PontosResponseDTO.fromEntity(it) }
+        return TotalHorasDTO(
+            listaHoras = listaDTO,
+            horasTotal = rankingHorasExtrasDTO
+        )
     }
 
+    private fun calcularHorasTrabalhadas(pontos: List<Pontos>): Double {
+        val pontosOrdenados = pontos.sortedBy { it.horario }
+        var totalHoras = 0.0
+
+        var entrada: LocalDateTime? = null
+        for (ponto in pontosOrdenados) {
+            when (ponto.tipo) {
+                TipoPonto.ENTRADA, TipoPonto.VOLTA_ALMOCO -> entrada = ponto.horario
+                TipoPonto.SAIDA, TipoPonto.ALMOCO -> {
+                    if (entrada != null) {
+                        val duracao = java.time.Duration.between(entrada, ponto.horario).toHours().toDouble()
+                        totalHoras += duracao
+                        entrada = null
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        return totalHoras
+    }
 
 }

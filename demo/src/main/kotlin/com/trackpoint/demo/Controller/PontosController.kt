@@ -1,9 +1,6 @@
 package com.trackpoint.demo.Controller
 
-import com.trackpoint.demo.DTO.PontosCreateRequestDTO
-import com.trackpoint.demo.DTO.PontosFaltantesDTO
-import com.trackpoint.demo.DTO.PontosResponseDTO
-import com.trackpoint.demo.DTO.PontosUpdateRequestDTO
+import com.trackpoint.demo.DTO.*
 import com.trackpoint.demo.Service.PontosService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -81,7 +78,7 @@ class PontosController(private val pontosService: PontosService) {
         @PathVariable usuarioId: Int,
         @RequestParam dataInicio: String,
         @RequestParam dataFim: String
-    ): ResponseEntity<List<PontosResponseDTO>> {
+    ): ResponseEntity<TotalHorasDTO> {
         val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
         val inicio = LocalDate.parse(dataInicio, formatter)
         val fim = LocalDate.parse(dataFim, formatter)
