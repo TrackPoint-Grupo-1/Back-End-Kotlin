@@ -1,9 +1,6 @@
 package com.trackpoint.demo.Service
 
-import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
-import com.trackpoint.demo.DTO.RankingHorasExtrasProjetoDTO
-import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasCreateRequestDTO
-import com.trackpoint.demo.DTO.SolicitacaoHorasExtrasUpdateRequestDTO
+import com.trackpoint.demo.DTO.*
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Exeptions.InvalidDateFormatException
@@ -149,7 +146,7 @@ class SolicitarHorasExtrasService(
         dataInicio: String,
         dataFim: String,
         foiSolicitado: Boolean? = null
-    ): List<SolicitacaoHorasExtras> {
+    ): TotalHorasExtraDTO {
 
         val inicio = try {
             LocalDate.parse(dataInicio, formatter)
@@ -175,7 +172,27 @@ class SolicitarHorasExtrasService(
             )
         }
 
-        return horasExtrasList
+        // transforma em DTO de resposta
+        val listaHorasDTO = horasExtrasList.map { SolicitacaoHorasExtrasResponseDTO(it) }
+
+        // soma as horas feitas
+        val totalHoras = horasExtrasList.sumOf {
+            val duracao = Duration.between(it.horasDe, it.horasAte)
+            duracao.toMinutes().toDouble() / 60 // converte minutos para horas decimais
+        }
+
+        val usuario = horasExtrasList.first().usuario
+
+        val rankingDTO = RankingHorasExtrasDTO(
+            usuarioId = usuario.id,
+            nome = usuario.nome,
+            totalHoras = totalHoras
+        )
+
+        return TotalHorasExtraDTO(
+            listaHoras = listaHorasDTO,
+            horasTotal = rankingDTO
+        )
     }
 
     fun rankingFuncionariosHorasExtrasNoMes(): List<RankingHorasExtrasDTO> {

@@ -23,7 +23,8 @@ class HorasExtrasScheduler(
     private val limiteMinimoHorasExtras = Duration.ofMinutes(15) // só gera se exceder 15 minutos
 
     @Transactional
-    @Scheduled(cron = "0 50 23 * * *") // todos os dias às 23:50
+    //@Scheduled(cron = "0 50 23 * * *") // todos os dias às 23:50
+    @Scheduled(fixedRate = 30000) // a cada 30 segundos (30000 ms)
     fun verificarHorasExtras() {
         val hoje = LocalDate.now()
         val inicioDoDia = hoje.atStartOfDay()

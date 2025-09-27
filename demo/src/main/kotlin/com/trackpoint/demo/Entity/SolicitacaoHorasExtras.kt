@@ -31,5 +31,5 @@ data class SolicitacaoHorasExtras(
     var foiAprovada: Boolean = false,
     val criadoEm: LocalDate = LocalDate.now(),
 
-    var turno: String? = null // UUID do ponto
+    var turno: String? = null, // UUID do ponto
 )

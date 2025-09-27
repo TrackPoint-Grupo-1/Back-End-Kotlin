@@ -60,11 +60,11 @@ class SolicitarHorasExtrasController (private val solicitarHorasExtrasService: S
         @PathVariable usuarioId: Int,
         @RequestParam dataInicio: String,
         @RequestParam dataFim: String,
-        @RequestParam foiSolicitado: Boolean?
-    ): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
+        @RequestParam(required = false) foiSolicitado: Boolean?
+    ): ResponseEntity<TotalHorasExtraDTO> {
 
-        val horasExtrasList = solicitarHorasExtrasService.listarHorasPorUsuarioEntreDatas(usuarioId, dataInicio, dataFim, foiSolicitado)
-        return ResponseEntity.ok(horasExtrasList.map { SolicitacaoHorasExtrasResponseDTO(it) })
+        val resultado = solicitarHorasExtrasService.listarHorasPorUsuarioEntreDatas(usuarioId, dataInicio, dataFim, foiSolicitado)
+        return ResponseEntity.ok(resultado)
     }
 
     @GetMapping("/ranking-geral")
