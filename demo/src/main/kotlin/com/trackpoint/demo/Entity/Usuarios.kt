@@ -1,5 +1,7 @@
 package com.trackpoint.demo.Entity
 
+import com.trackpoint.demo.Config.ConversorJPA.LocalidadeCryptoConverter
+import com.trackpoint.demo.Config.ConversorJPA.SenhaCryptoConverter
 import com.trackpoint.demo.Enum.CargosEnum
 import jakarta.persistence.*
 import jakarta.validation.constraints.Email
@@ -16,6 +18,8 @@ data class Usuarios(
     val id: Int,
     val nome: String,
     val email: String,
+
+    @Convert(converter = SenhaCryptoConverter::class)
     val senha: String,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
