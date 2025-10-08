@@ -1,5 +1,6 @@
 package com.trackpoint.demo.Entity
 
+import com.trackpoint.demo.Config.ConversorJPA.LocalidadeCryptoConverter
 import com.trackpoint.demo.Enum.TipoPonto
 import jakarta.persistence.*
 import java.time.LocalDateTime
@@ -18,6 +19,7 @@ data class Pontos(
     @Enumerated(EnumType.STRING)
     val tipo: TipoPonto,
 
+    @Convert(converter = LocalidadeCryptoConverter::class)
     var localidade: String? = null,
 
     val horario: LocalDateTime = LocalDateTime.now(),

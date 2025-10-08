@@ -1,6 +1,8 @@
 package com.trackpoint.demo.DTO
 
+import com.trackpoint.demo.Config.ConversorJPA.LocalidadeCryptoConverter
 import com.trackpoint.demo.Enum.TipoPonto
+import jakarta.persistence.Convert
 import jakarta.validation.constraints.NotNull
 import java.sql.Time
 import java.time.LocalDate
@@ -13,9 +15,9 @@ data class PontosCreateRequestDTO(
     @field:NotNull(message = "O tipo de ponto é obrigatório")
     val tipo: TipoPonto,
 
-    val localidade: String,
+    val localidade: String?,
 
-    val horario: LocalDateTime? = null, // se não enviar, usamos LocalDateTime.now()
+    val horario: LocalDateTime? = null,
 
     val observacoes: String? = null
 )
