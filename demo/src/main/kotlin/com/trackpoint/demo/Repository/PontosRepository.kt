@@ -47,5 +47,5 @@ interface PontosRepository : JpaRepository<Pontos, Int>{
         fim: LocalDateTime
     ): List<Pontos>
 
-
+    fun countByUsuarioAndManualTrue(usuario: Usuarios): Long
 }

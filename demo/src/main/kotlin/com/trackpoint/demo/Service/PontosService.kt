@@ -84,6 +84,85 @@ class PontosService(
             horario = horario,
             localidade = dto.localidade,
             observacoes = dto.observacoes,
+            manual = false,
+            turno = turnoId
+        )
+
+        val salvo = pontosRepository.save(ponto)
+        return PontosResponseDTO.fromEntity(salvo)
+    }
+
+    fun criarPontoManual(dto: PontosCreateRequestDTO): PontosResponseDTO {
+        val usuario = usuariosRepository.findById(dto.usuarioId)
+            .orElseThrow { UsuarioNotFoundException("Usuário não encontrado com id: ${dto.usuarioId}") }
+
+        val horario = dto.horario ?: LocalDateTime.now()
+
+        if (dto.tipo == TipoPonto.ENTRADA) {
+            val turnoAberto = pontosRepository.findLastOpenTurn(usuario)
+            if (turnoAberto != null) {
+                throw RegraDeNegocioException(
+                    "Não é possível iniciar um novo turno antes de registrar a SAÍDA do turno anterior"
+                )
+            }
+        }
+
+        // Determinar o turnoId
+        val turnoId = when (dto.tipo) {
+            TipoPonto.ENTRADA -> UUID.randomUUID().toString() // cria novo turno
+            else -> {
+                val ultimoTurnoAberto = pontosRepository.findFirstByUsuarioAndTipoNotOrderByHorarioDesc(usuario, TipoPonto.SAIDA)
+                    ?: throw RegraDeNegocioException("Não existe turno aberto para registrar ${dto.tipo}")
+                ultimoTurnoAberto.turno
+            }
+        }
+
+        // Buscar todas as batidas do turno
+        val batidasDoTurno = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(
+            usuario,
+            horario.minusHours(12), // busca últimas 12h para incluir overnight
+            horario.plusHours(12)
+        ).filter { it.turno == turnoId }
+
+        // Validação mínima de consistência
+        when (dto.tipo) {
+            TipoPonto.SAIDA -> {
+                val entradas = batidasDoTurno.count { it.tipo == TipoPonto.ENTRADA || it.tipo == TipoPonto.VOLTA_ALMOCO }
+                val saidas = batidasDoTurno.count { it.tipo == TipoPonto.SAIDA || it.tipo == TipoPonto.ALMOCO }
+                if (entradas <= saidas) {
+                    throw RegraDeNegocioException("Não é possível registrar SAÍDA sem entrada correspondente")
+                }
+            }
+            TipoPonto.ALMOCO -> {
+                val entradas = batidasDoTurno.count { it.tipo == TipoPonto.ENTRADA || it.tipo == TipoPonto.VOLTA_ALMOCO }
+                val almocos = batidasDoTurno.count { it.tipo == TipoPonto.ALMOCO }
+                if (entradas <= almocos) {
+                    throw RegraDeNegocioException("Não é possível registrar ALMOÇO sem entrada correspondente")
+                }
+            }
+            TipoPonto.VOLTA_ALMOCO -> {
+                val almocos = batidasDoTurno.count { it.tipo == TipoPonto.ALMOCO }
+                val voltas = batidasDoTurno.count { it.tipo == TipoPonto.VOLTA_ALMOCO }
+                if (almocos <= voltas) {
+                    throw RegraDeNegocioException("Não é possível registrar VOLTA_ALMOCO sem ALMOÇO correspondente")
+                }
+            }
+            else -> { /* ENTRADA sempre permitido */ }
+        }
+
+        var qtdPontosManuais = pontosRepository.countByUsuarioAndManualTrue(usuario)
+
+        if (qtdPontosManuais >= 20) {
+            throw RegraDeNegocioException("Limite de 5 conjuntos pontos manuais atingido para o usuário ${usuario.id}")
+        }
+
+        val ponto = Pontos(
+            usuario = usuario,
+            tipo = dto.tipo,
+            horario = horario,
+            localidade = dto.localidade,
+            observacoes = dto.observacoes,
+            manual = true,
             turno = turnoId
         )
 
@@ -190,7 +269,7 @@ class PontosService(
         // Adicionar pontos faltantes
         fun adicionarSeFaltante(tipo: TipoPonto, horario: LocalTime?) {
             if (horario != null && !tiposExistentes.contains(tipo)) {
-                val ponto = Pontos(usuario = usuario, tipo = tipo, horario = dataFormatada.atTime(horario), turno = turno)
+                val ponto = Pontos(usuario = usuario, tipo = tipo, horario = dataFormatada.atTime(horario), turno = turno, manual = true)
                 novosPontos.add(pontosRepository.save(ponto))
             }
         }

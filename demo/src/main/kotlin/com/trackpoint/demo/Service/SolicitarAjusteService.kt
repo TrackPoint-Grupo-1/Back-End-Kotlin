@@ -31,8 +31,8 @@ class SolicitarAjusteService(
         val totalSolicitacoes = solicitarAjusteRepository
             .countByUsuarioIdAndCriadoEmBetween(usuario.id, inicioDoMes, fimDoMes)
 
-        if (totalSolicitacoes >= 5) {
-            throw RegraDeNegocioException("O limite máximo de 5 solicitações por mês já foi atingido.")
+        if (totalSolicitacoes >= 6) {
+            throw RegraDeNegocioException("O limite máximo de 6 solicitações por mês já foi atingido.")
         }
 
         val solicitacao = SolicitarAjuste(

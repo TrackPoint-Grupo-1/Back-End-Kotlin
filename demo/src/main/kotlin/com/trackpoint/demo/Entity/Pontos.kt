@@ -22,6 +22,8 @@ data class Pontos(
     @Convert(converter = LocalidadeCryptoConverter::class)
     var localidade: String? = null,
 
+    var manual: Boolean,
+
     val horario: LocalDateTime = LocalDateTime.now(),
 
     val observacoes: String? = null,

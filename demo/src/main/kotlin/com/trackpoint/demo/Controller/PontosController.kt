@@ -20,6 +20,12 @@ class PontosController(private val pontosService: PontosService) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pontoCriado)
     }
 
+    @PostMapping("/manual")
+    fun criarPontoManual(@RequestBody @Valid dto: PontosCreateRequestDTO): ResponseEntity<PontosResponseDTO> {
+        val pontoCriado = pontosService.criarPontoManual(dto)
+        return ResponseEntity.status(HttpStatus.CREATED).body(pontoCriado)
+    }
+
     @PatchMapping("/{id}")
     fun atualizarPonto(
         @PathVariable id: Int,

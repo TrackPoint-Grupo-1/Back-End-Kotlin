@@ -17,6 +17,8 @@ data class PontosCreateRequestDTO(
 
     val localidade: String?,
 
+    val manual: Boolean,
+
     val horario: LocalDateTime? = null,
 
     val observacoes: String? = null

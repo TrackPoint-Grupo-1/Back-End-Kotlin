@@ -11,6 +11,7 @@ data class PontosResponseDTO(
     val tipo: TipoPonto,
     val horario: LocalDateTime,
     val localidade: String?,
+    val manual: Boolean,
     val observacoes: String?,
     val turno: String
 ) {
@@ -23,6 +24,7 @@ data class PontosResponseDTO(
                 horario = ponto.horario,
                 localidade = ponto.localidade ?: "Não Informado",
                 observacoes = ponto.observacoes ?: "Não Informado",
+                manual = ponto.manual,
                 turno = ponto.turno
             )
         }
