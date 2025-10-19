@@ -1,6 +1,7 @@
 package com.trackpoint.demo.DTO
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.trackpoint.demo.Enum.StatusSolicitacao
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -15,5 +16,5 @@ data class SolicitacaoHorasExtrasUpdateRequestDTO(
     val observacao: String?,
     var foiSolicitada: Boolean?,
     var foiFeita: Boolean?,
-    var foiAprovada: Boolean?
-)
+    var foiAprovada: StatusSolicitacao?
+    )

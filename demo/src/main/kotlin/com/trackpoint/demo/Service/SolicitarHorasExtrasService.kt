@@ -3,6 +3,7 @@ package com.trackpoint.demo.Service
 import com.trackpoint.demo.DTO.*
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
 import com.trackpoint.demo.Entity.Pontos
+import com.trackpoint.demo.Enum.StatusSolicitacao
 import com.trackpoint.demo.Exeptions.InvalidDateFormatException
 import com.trackpoint.demo.Exeptions.NenhumaHoraExtraEncontradaException
 import com.trackpoint.demo.Exeptions.RegraDeNegocioException
@@ -65,7 +66,7 @@ class SolicitarHorasExtrasService(
                 justificativa = dto.justificativa,
                 observacao = dto.observacao,
                 foiSolicitada = true,
-                foiAprovada = false,
+                foiAprovada = StatusSolicitacao.PENDENTE,
                 foiFeita = false,
                 criadoEm = LocalDate.now()
             )
@@ -227,6 +228,71 @@ class SolicitarHorasExtrasService(
         }
         return ranking
     }
+
+    fun listarTotalHorasExtrasDeTodosOsProjetoPorGerente(
+        gerenteId: Int,
+        dataInicio: String,
+        dataFim: String,
+        foiSolicitado: Boolean? = null
+    ): TotalHorasExtrasDTO {
+
+        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        val inicio = LocalDate.parse(dataInicio, formatter)
+        val fim = LocalDate.parse(dataFim, formatter)
+
+        // 1️⃣ Buscar todos os projetos do gerente
+        val projetos = projetosRepository.findByGerenteIdInList(gerenteId)
+        if (projetos.isEmpty()) return TotalHorasExtrasDTO("00:00:00")
+
+        // 2️⃣ Buscar todas as solicitações no período, filtrando só as feitas
+        val solicitacoes = if (foiSolicitado != null) {
+            solicitarHorasExtrasRepository.findByProjetoInAndDataBetweenAndFoiSolicitadaAndFoiFeita(
+                projetos, inicio, fim, foiSolicitado, true
+            )
+        } else {
+            solicitarHorasExtrasRepository.findByProjetoInAndDataBetweenAndFoiFeita(
+                projetos, inicio, fim, true
+            )
+        }
+
+        // 3️⃣ Somar todas as horas extras
+        var totalHorasExtrasMinutos = 0
+        solicitacoes.forEach { s ->
+            val duracao = java.time.Duration.between(s.horasDe, s.horasAte)
+            val minutos = duracao.toMinutes().toInt()
+            totalHorasExtrasMinutos += minutos
+        }
+
+        // 4️⃣ Converter para HH:mm:ss
+        val h = totalHorasExtrasMinutos / 60
+        val m = totalHorasExtrasMinutos % 60
+        val horaExtraFormatada = "%02d:%02d:00".format(h, m)
+
+        return TotalHorasExtrasDTO(horaExtraFormatada)
+    }
+
+    fun listarSolicitacoesPendentesPorGerente(idGerente: Int): List<SolicitacaoHorasExtras> {
+        val projetosDoGerente = projetosRepository.findByGerenteIdInList(idGerente)
+        if (projetosDoGerente.isEmpty()) {
+            throw RegraDeNegocioException("O gerente com id $idGerente não possui projetos vinculados.")
+        }
+
+        val solicitacoesPendentes = solicitarHorasExtrasRepository.findByProjetoInAndFoiSolicitadaAndFoiFeitaAndFoiAprovada(
+            projetosDoGerente,
+            foiSolicitada = true,
+            foiFeita = false,
+            foiAprovada = StatusSolicitacao.PENDENTE
+        )
+
+        if (solicitacoesPendentes.isEmpty()) {
+            throw NenhumaHoraExtraEncontradaException(
+                "Nenhuma solicitação de horas extras pendente encontrada para o gerente com id $idGerente."
+            )
+        }
+
+        return solicitacoesPendentes
+    }
+
 
 
 }

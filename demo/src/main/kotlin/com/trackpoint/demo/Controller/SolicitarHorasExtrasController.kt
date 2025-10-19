@@ -79,4 +79,27 @@ class SolicitarHorasExtrasController (private val solicitarHorasExtrasService: S
         return ResponseEntity.ok(ranking)
     }
 
+    @GetMapping("/total-horas-extras/projetos-gerente/{idGerente}")
+    fun listarTotalHorasExtrasDeTodosOsProjetoPorGerente(
+        @PathVariable idGerente: Int,
+        @RequestParam dataInicio: String,
+        @RequestParam dataFim: String,
+        @RequestParam foiSolicitado: Boolean?
+    ): ResponseEntity<TotalHorasExtrasDTO> {
+
+        val totalHorasExtras = solicitarHorasExtrasService
+            .listarTotalHorasExtrasDeTodosOsProjetoPorGerente(idGerente, dataInicio, dataFim, foiSolicitado)
+
+        return ResponseEntity.ok(totalHorasExtras)
+    }
+
+    @GetMapping("/solicitacoes-pendentes/gerente/{idGerente}")
+    fun listarSolicitacoesPendentesPorGerente(
+        @PathVariable idGerente: Int
+    ): ResponseEntity<List<SolicitacaoHorasExtrasResponseDTO>> {
+        val solicitacoesPendentes = solicitarHorasExtrasService.listarSolicitacoesPendentesPorGerente(idGerente)
+        val responseList = solicitacoesPendentes.map { SolicitacaoHorasExtrasResponseDTO(it) }
+        return ResponseEntity.ok(responseList)
+    }
+
 }

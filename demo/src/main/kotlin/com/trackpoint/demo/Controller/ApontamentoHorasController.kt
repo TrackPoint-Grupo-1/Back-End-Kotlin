@@ -17,9 +17,28 @@ class ApontamentoHorasController (private val apontamentoHorasService: Apontamen
         return ResponseEntity.ok(response)
     }
 
+    @GetMapping("/usuario/{usuarioId}")
+    fun listarApontamentosPorUsuarioData(
+        @PathVariable usuarioId: Int,
+        @RequestParam data: String,
+    ): ResponseEntity<List<ApontamentoHorasResponseDTO>> {
+        val apontamentos = apontamentoHorasService.listarApontamentosPorUsuarioData(usuarioId, data)
+        return ResponseEntity.ok(apontamentos)
+    }
+
     @DeleteMapping("/{id}")
     fun deletarApontamento(@PathVariable id: Long): ResponseEntity<Void> {
         apontamentoHorasService.deletarApontamento(id)
         return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/gerente/{gerenteId}")
+    fun listarApontamentosPorGerenteData(
+        @PathVariable gerenteId: Int,
+        @RequestParam dataInicio: String,
+        @RequestParam datafim: String
+    ): ResponseEntity<List<ApontamentoHorasResponseDTO>> {
+        val apontamentos = apontamentoHorasService.listarApontamentosPorGerenteData(gerenteId, dataInicio, datafim)
+        return ResponseEntity.ok(apontamentos)
     }
 }

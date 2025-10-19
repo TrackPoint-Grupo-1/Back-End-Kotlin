@@ -2,6 +2,7 @@ package com.trackpoint.demo.DTO
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
+import com.trackpoint.demo.Enum.StatusSolicitacao
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -19,7 +20,7 @@ data class SolicitacaoHorasExtrasResponseDTO(
     val observacao: String,
     val foiSolicitado: Boolean,
     val foiFeita: Boolean,
-    val foiAprovada: Boolean,
+    var foiAprovada: StatusSolicitacao,
     val criadoEm: LocalDate
 ) {
     constructor(solicitacaoHorasExtras: SolicitacaoHorasExtras) : this(
@@ -33,7 +34,7 @@ data class SolicitacaoHorasExtrasResponseDTO(
         observacao = solicitacaoHorasExtras.observacao,
         foiSolicitado = solicitacaoHorasExtras.foiSolicitada,
         foiFeita = solicitacaoHorasExtras.foiFeita,
-        foiAprovada = solicitacaoHorasExtras.foiAprovada,
+        foiAprovada = solicitacaoHorasExtras.foiAprovada ?: StatusSolicitacao.PENDENTE,
         criadoEm = solicitacaoHorasExtras.criadoEm
     )
 }

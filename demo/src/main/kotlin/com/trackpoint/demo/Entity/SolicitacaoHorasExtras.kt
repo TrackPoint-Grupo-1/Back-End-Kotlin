@@ -1,5 +1,6 @@
 package com.trackpoint.demo.Entity
 
+import com.trackpoint.demo.Enum.StatusSolicitacao
 import jakarta.persistence.*
 import java.time.LocalDate
 import java.time.LocalTime
@@ -28,7 +29,7 @@ data class SolicitacaoHorasExtras(
     var observacao: String,
     var foiSolicitada: Boolean,
     var foiFeita: Boolean = false,
-    var foiAprovada: Boolean = false,
+    var foiAprovada: StatusSolicitacao? = StatusSolicitacao.PENDENTE,
     val criadoEm: LocalDate = LocalDate.now(),
 
     var turno: String? = null, // UUID do ponto

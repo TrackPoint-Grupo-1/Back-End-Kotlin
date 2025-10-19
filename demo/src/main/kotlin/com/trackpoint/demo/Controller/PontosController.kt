@@ -92,8 +92,4 @@ class PontosController(private val pontosService: PontosService) {
         val pontos = pontosService.listarPontosPorUsuarioEPeriodo(usuarioId, inicio, fim)
         return ResponseEntity.ok(pontos)
     }
-
-
-
-
 }

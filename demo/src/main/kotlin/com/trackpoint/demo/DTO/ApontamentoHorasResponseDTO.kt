@@ -12,7 +12,7 @@ data class ApontamentoHorasResponseDTO(
     val horasFeita: Double,
     val descricao: String,
     val horas: Double,
-    val Projeto: Projeto?
+    val projeto: Projeto?
 ) {
     companion object {
         fun fromEntity(entity: ApontamentoHoras) = entity.horasFeita?.let {
@@ -24,7 +24,7 @@ data class ApontamentoHorasResponseDTO(
                 descricao = entity.descricao,
                 horas = entity.horas,
                 horasFeita = it,
-                Projeto = entity.projeto
+                projeto = entity.projeto
             )
         }
     }

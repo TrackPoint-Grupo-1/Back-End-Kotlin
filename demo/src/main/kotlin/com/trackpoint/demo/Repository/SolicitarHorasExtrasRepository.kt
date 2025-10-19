@@ -2,8 +2,10 @@ package com.trackpoint.demo.Repository
 
 import com.trackpoint.demo.DTO.RankingHorasExtrasDTO
 import com.trackpoint.demo.DTO.RankingHorasExtrasProjetoDTO
+import com.trackpoint.demo.Entity.Projeto
 import com.trackpoint.demo.Entity.SolicitacaoHorasExtras
 import com.trackpoint.demo.Entity.Usuarios
+import com.trackpoint.demo.Enum.StatusSolicitacao
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -68,6 +70,36 @@ interface SolicitarHorasExtrasRepository : JpaRepository<SolicitacaoHorasExtras,
         data: LocalDate,
         horasDe: LocalTime,
         horasAte: LocalTime
+    ): List<SolicitacaoHorasExtras>
+
+    fun findByProjetoInAndDataBetween(
+        projetos: List<Projeto>,
+        dataInicio: LocalDate,
+        dataFim: LocalDate
+    ): List<SolicitacaoHorasExtras>
+
+    // Buscar todas as solicitações de projetos entre datas, só as feitas
+    fun findByProjetoInAndDataBetweenAndFoiFeita(
+        projetos: List<Projeto>,
+        dataInicio: LocalDate,
+        dataFim: LocalDate,
+        foiFeita: Boolean = true
+    ): List<SolicitacaoHorasExtras>
+
+    // Buscar todas as solicitações de projetos entre datas, filtrando por foiSolicitada e só as feitas
+    fun findByProjetoInAndDataBetweenAndFoiSolicitadaAndFoiFeita(
+        projetos: List<Projeto>,
+        dataInicio: LocalDate,
+        dataFim: LocalDate,
+        foiSolicitada: Boolean,
+        foiFeita: Boolean = true
+    ): List<SolicitacaoHorasExtras>
+
+    fun findByProjetoInAndFoiSolicitadaAndFoiFeitaAndFoiAprovada(
+        projetos: List<Projeto>,
+        foiSolicitada: Boolean,
+        foiFeita: Boolean,
+        foiAprovada: StatusSolicitacao
     ): List<SolicitacaoHorasExtras>
 
 }
