@@ -36,9 +36,9 @@ class ApontamentoHorasController (private val apontamentoHorasService: Apontamen
     fun listarApontamentosPorGerenteData(
         @PathVariable gerenteId: Int,
         @RequestParam dataInicio: String,
-        @RequestParam datafim: String
+        @RequestParam dataFim: String
     ): ResponseEntity<List<ApontamentoHorasResponseDTO>> {
-        val apontamentos = apontamentoHorasService.listarApontamentosPorGerenteData(gerenteId, dataInicio, datafim)
+        val apontamentos = apontamentoHorasService.listarApontamentosPorGerenteData(gerenteId, dataInicio, dataFim)
         return ResponseEntity.ok(apontamentos)
     }
 }

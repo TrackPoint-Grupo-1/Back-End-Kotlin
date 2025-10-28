@@ -6,15 +6,18 @@ import com.trackpoint.demo.DTO.SolicitarAjusteStatusUpdateDTO
 import com.trackpoint.demo.Entity.SolicitarAjuste
 import com.trackpoint.demo.Enum.StatusSolicitacao
 import com.trackpoint.demo.Exeptions.*
+import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.SolicitarAjusteRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Service
 class SolicitarAjusteService(
     private val usuariosRepository: UsuariosRepository,
-    private val solicitarAjusteRepository: SolicitarAjusteRepository
+    private val solicitarAjusteRepository: SolicitarAjusteRepository,
+    private val projetosRepository: ProjetoRepository
 ) {
 
     fun criarSolicitacao(request: SolicitarAjusteRequestDTO, usuarioId: Int): SolicitarAjusteResponseDTO {
@@ -31,18 +34,15 @@ class SolicitarAjusteService(
         val totalSolicitacoes = solicitarAjusteRepository
             .countByUsuarioIdAndCriadoEmBetween(usuario.id, inicioDoMes, fimDoMes)
 
-        if (totalSolicitacoes >= 6) {
-            throw RegraDeNegocioException("O limite máximo de 6 solicitações por mês já foi atingido.")
+        if (totalSolicitacoes >= 5) {
+            throw RegraDeNegocioException("O limite máximo de 5 solicitações por mês já foi atingido.")
         }
 
         val solicitacao = SolicitarAjuste(
             usuario = usuario,
             data = request.data,
-            horaEntrada = request.horaEntrada,
-            horaAlmoco = request.horaAlmoco,
-            horaVoltaAlmoco = request.horaVoltaAlmoco,
-            horaSaida = request.horaSaida,
-            motivo = request.motivo
+            justificativa = request.justificativa,
+            observacao = request.observacao
         )
 
         return SolicitarAjusteResponseDTO.fromEntity(solicitarAjusteRepository.save(solicitacao))
@@ -53,9 +53,29 @@ class SolicitarAjusteService(
             .map { SolicitarAjusteResponseDTO.fromEntity(it) }
     }
 
-    fun listarSolicitacoesPendentes(): List<SolicitarAjusteResponseDTO> {
-        return solicitarAjusteRepository.findByStatus(StatusSolicitacao.PENDENTE)
-            .map { SolicitarAjusteResponseDTO.fromEntity(it) }
+    fun listarSolicitacoesPendentesPorGestor(gestorId: Int): List<SolicitarAjusteResponseDTO> {
+        val projetosDoGestor = projetosRepository.findByGerenteIdInList(gestorId)
+        if (projetosDoGestor.isEmpty()) {
+            throw RegraDeNegocioException("O gestor com id $gestorId não possui projetos vinculados.")
+        }
+
+        val usuariosDosProjetos = projetosDoGestor.flatMap { it.usuarios }.map { it.id }.toSet()
+        if (usuariosDosProjetos.isEmpty()) {
+            throw RegraDeNegocioException("Nenhum usuário encontrado nos projetos do gestor com id $gestorId.")
+        }
+
+        val solicitacoesPendentes = solicitarAjusteRepository.findByProjetosAndStatus(
+            projetosDoGestor,
+            StatusSolicitacao.PENDENTE
+        )
+
+        if (solicitacoesPendentes.isEmpty()) {
+            throw NenhumaSolicitacaoEncontradaException(
+                "Nenhuma solicitação pendente encontrada para o gestor com id $gestorId."
+            )
+        }
+
+        return solicitacoesPendentes.map { SolicitarAjusteResponseDTO.fromEntity(it) }
     }
 
     fun atualizarStatus(id: Int, statusDTO: SolicitarAjusteStatusUpdateDTO): SolicitarAjusteResponseDTO {
@@ -90,6 +110,37 @@ class SolicitarAjusteService(
         val solicitacoes = solicitarAjusteRepository.findByUsuarioIdAndStatus(usuarioId, statusEnum)
         if (solicitacoes.isEmpty()) {
             throw NenhumaSolicitacaoEncontradaException("Nenhuma solicitação $statusEnum encontrada para o usuário $usuarioId")
+        }
+
+        return solicitacoes.map { SolicitarAjusteResponseDTO.fromEntity(it) }
+    }
+
+    fun listarSolicitacoesPorUsuarioEMes(
+        usuarioId: Int,
+        dataInicio: String,
+        dataFim: String
+    ): List<SolicitarAjusteResponseDTO> {
+        val inicio = try {
+            LocalDate.parse(dataInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        } catch (e: Exception) {
+            throw InvalidDateFormatException("Formato de data inválido para dataInicio: $dataInicio. Use o formato dd/MM/yyyy.")
+        }
+
+        val fim = try {
+            LocalDate.parse(dataFim, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        } catch (e: Exception) {
+            throw InvalidDateFormatException("Formato de data inválido para dataFim: $dataFim. Use o formato dd/MM/yyyy.")
+        }
+
+        if (fim.isBefore(inicio)) {
+            throw InvalidDateFormatException("dataFim não pode ser anterior a dataInicio.")
+        }
+
+        val solicitacoes = solicitarAjusteRepository
+            .findByUsuarioIdAndDataBetween(usuarioId, inicio, fim)
+
+        if (solicitacoes.isEmpty()) {
+            throw NenhumaSolicitacaoEncontradaException("Nenhuma solicitação encontrada para o usuário $usuarioId no período especificado.")
         }
 
         return solicitacoes.map { SolicitarAjusteResponseDTO.fromEntity(it) }

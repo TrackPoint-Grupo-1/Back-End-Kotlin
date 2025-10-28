@@ -2,6 +2,7 @@ package com.trackpoint.demo.DTO
 
 import com.trackpoint.demo.Entity.SolicitarAjuste
 import com.trackpoint.demo.Enum.StatusSolicitacao
+import io.micrometer.observation.Observation
 import java.sql.Time
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -10,11 +11,8 @@ data class SolicitarAjusteResponseDTO(
     val id: Int,
     val usuarioId: Int,
     val data: LocalDate,
-    val horaEntrada: Time?,
-    val horaAlmoco: Time?,
-    val horaVoltaAlmoco: Time?,
-    val horaSaida: Time?,
-    val motivo: String,
+    val justificativa: String,
+    val observacao: String? = "",
     val status: StatusSolicitacao,
     val criadoEm: LocalDateTime
 ) {
@@ -23,11 +21,8 @@ data class SolicitarAjusteResponseDTO(
             id = solicitacao.id,
             usuarioId = solicitacao.usuario.id,
             data = solicitacao.data,
-            horaEntrada = solicitacao.horaEntrada,
-            horaAlmoco = solicitacao.horaAlmoco,
-            horaVoltaAlmoco = solicitacao.horaVoltaAlmoco,
-            horaSaida = solicitacao.horaSaida,
-            motivo = solicitacao.motivo,
+            justificativa = solicitacao.justificativa,
+            observacao = solicitacao.observacao,
             status = solicitacao.status,
             criadoEm = solicitacao.criadoEm
         )

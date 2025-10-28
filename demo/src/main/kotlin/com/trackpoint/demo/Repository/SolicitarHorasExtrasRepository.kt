@@ -37,20 +37,24 @@ interface SolicitarHorasExtrasRepository : JpaRepository<SolicitacaoHorasExtras,
     )
     fun findHorasExtrasFeitasNoMes(): List<SolicitacaoHorasExtras>
 
-    @Query(
-        """
-    SELECT u.id AS usuarioId,
-           u.nome AS nome,
-           SUM(TIMESTAMPDIFF(MINUTE, h.horas_de, h.horas_ate)) / 60.0 AS totalHoras
-    FROM solicitacao_horas_extras h
-    JOIN usuarios u ON h.usuario_id = u.id
-    WHERE h.projeto_id = :projetoId
-    GROUP BY u.id, u.nome
-    ORDER BY totalHoras DESC
-    """,
-        nativeQuery = true
-    )
-    fun buscarRankingPorProjeto(@Param("projetoId") projetoId: Int): List<RankingHorasExtrasProjetoDTO>
+@Query(
+    """
+SELECT u.id AS usuarioId,
+       u.nome AS nome,
+       SUM(TIMESTAMPDIFF(MINUTE, h.horas_de, h.horas_ate)) / 60.0 AS totalHoras
+FROM solicitacao_horas_extras h
+JOIN usuarios u ON h.usuario_id = u.id
+WHERE h.projeto_id = :projetoId
+  AND h.foi_feita = :foiFeita
+GROUP BY u.id, u.nome
+ORDER BY totalHoras DESC
+""",
+    nativeQuery = true
+)
+fun buscarRankingPorProjeto(
+    @Param("projetoId") projetoId: Int,
+    @Param("foiFeita") foiFeita: Boolean
+): List<RankingHorasExtrasProjetoDTO>
 
     @Query("""
         SELECT s 
@@ -100,6 +104,21 @@ interface SolicitarHorasExtrasRepository : JpaRepository<SolicitacaoHorasExtras,
         foiSolicitada: Boolean,
         foiFeita: Boolean,
         foiAprovada: StatusSolicitacao
+    ): List<SolicitacaoHorasExtras>
+
+    fun findByUsuarioIdAndDataBetweenAndFoiSolicitadaAndFoiFeita(
+        usuarioId: Int,
+        dataInicio: LocalDate,
+        dataFim: LocalDate,
+        foiSolicitada: Boolean,
+        foiFeita: Boolean
+    ): List<SolicitacaoHorasExtras>
+
+    fun findByUsuarioIdAndDataBetweenAndFoiFeita(
+        usuarioId: Int,
+        dataInicio: LocalDate,
+        dataFim: LocalDate,
+        foiFeita: Boolean
     ): List<SolicitacaoHorasExtras>
 
 }

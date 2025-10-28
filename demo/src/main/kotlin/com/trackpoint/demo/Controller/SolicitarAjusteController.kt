@@ -31,9 +31,11 @@ class SolicitarAjusteController(
         return ResponseEntity.ok(response)
     }
 
-    @GetMapping("/pendentes")
-    fun listarPendentes(): ResponseEntity<List<SolicitarAjusteResponseDTO>> {
-        val response = service.listarSolicitacoesPendentes()
+    @GetMapping("/gestor/{gestorId}")
+    fun listarSolicitacoesPorGestor(
+        @PathVariable gestorId: Int
+    ): ResponseEntity<List<SolicitarAjusteResponseDTO>> {
+        val response = service.listarSolicitacoesPendentesPorGestor(gestorId)
         return ResponseEntity.ok(response)
     }
 
@@ -52,6 +54,16 @@ class SolicitarAjusteController(
         @RequestBody @Valid statusDTO: SolicitarAjusteStatusUpdateDTO
     ): ResponseEntity<SolicitarAjusteResponseDTO> {
         val response = service.atualizarStatus(id, statusDTO)
+        return ResponseEntity.ok(response)
+    }
+
+    @GetMapping("/listar-por-periodo/{usuarioId}")
+    fun listarSolicitacoesPorUsuarioEMes(
+        @PathVariable usuarioId: Int,
+        @RequestParam dataInicio: String,
+        @RequestParam dataFim: String
+    ): ResponseEntity<List<SolicitarAjusteResponseDTO>> {
+        val response = service.listarSolicitacoesPorUsuarioEMes(usuarioId, dataInicio, dataFim)
         return ResponseEntity.ok(response)
     }
 }

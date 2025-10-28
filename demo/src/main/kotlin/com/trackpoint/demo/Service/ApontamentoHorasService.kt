@@ -6,6 +6,7 @@ import com.trackpoint.demo.Entity.ApontamentoHoras
 import com.trackpoint.demo.Entity.Pontos
 import com.trackpoint.demo.Enum.TipoPonto
 import com.trackpoint.demo.Exeptions.PontosNaoEncontradosException
+import com.trackpoint.demo.Exeptions.ProjetoNaoEncontradoException
 import com.trackpoint.demo.Exeptions.RegraDeNegocioException
 import com.trackpoint.demo.Exeptions.UsuarioNotFoundException
 import com.trackpoint.demo.Repository.ApontamentoHorasRepository
@@ -131,13 +132,13 @@ class ApontamentoHorasService(
         // 1️⃣ Buscar todos os projetos que pertencem ao gerente
         val projetos = projetoRepository.findByGerenteIdInList(gerenteId)
         if (projetos.isEmpty()) {
-            throw RegraDeNegocioException("Nenhum projeto encontrado para o gerente com id: $gerenteId")
+            throw ProjetoNaoEncontradoException("Nenhum projeto encontrado para o gerente com id: $gerenteId")
         }
 
         // 2️⃣ Buscar todos os apontamentos de horas nesses projetos dentro do intervalo de datas
         val apontamentos = repository.findByProjetoInAndDataBetween(projetos, inicio, fim)
         if (apontamentos.isEmpty()) {
-            throw RegraDeNegocioException("Nenhum apontamento encontrado para o gerente com id: $gerenteId entre $inicio e $fim")
+            throw PontosNaoEncontradosException("Nenhum apontamento encontrado para o gerente com id: $gerenteId entre $inicio e $fim")
         }
 
         // 3️⃣ Converter para DTO e retornar

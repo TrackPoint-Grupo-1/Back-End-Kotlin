@@ -162,10 +162,10 @@ class SolicitarHorasExtrasService(
         }
 
         val horasExtrasList = if (foiSolicitado != null) {
-            solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiSolicitada(usuarioId, inicio, fim, foiSolicitado)
-        } else {
-            solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim)
-        }
+                    solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiSolicitadaAndFoiFeita(usuarioId, inicio, fim, foiSolicitado, true)
+                } else {
+                    solicitarHorasExtrasRepository.findByUsuarioIdAndDataBetweenAndFoiFeita(usuarioId, inicio, fim, true)
+                }
 
         if (horasExtrasList.isEmpty()) {
             throw NenhumaHoraExtraEncontradaException(
@@ -222,9 +222,9 @@ class SolicitarHorasExtrasService(
     }
 
     fun rankingUsuariosPorProjeto(projetoId: Int): List<RankingHorasExtrasProjetoDTO> {
-        val ranking = solicitarHorasExtrasRepository.buscarRankingPorProjeto(projetoId)
+        val ranking = solicitarHorasExtrasRepository.buscarRankingPorProjeto(projetoId, true)
         if (ranking.isEmpty()) {
-            throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra encontrada para o projeto com id $projetoId")
+            throw NenhumaHoraExtraEncontradaException("Nenhuma hora extra feita encontrada para o projeto com id $projetoId")
         }
         return ranking
     }

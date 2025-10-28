@@ -8,10 +8,7 @@ import java.time.LocalDate
 class SolicitarAjusteRequestDTO(
     @field:NotNull
     val data: LocalDate,
-    val horaEntrada: Time? = null,
-    val horaAlmoco: Time? = null,
-    val horaVoltaAlmoco: Time? = null,
-    val horaSaida: Time? = null,
-    @field:NotBlank(message = "O motivo é obrigatório")
-    val motivo: String
+    @field:NotBlank(message = "A justificativa é obrigatório")
+    val justificativa: String,
+    val observacao: String? = null
 )

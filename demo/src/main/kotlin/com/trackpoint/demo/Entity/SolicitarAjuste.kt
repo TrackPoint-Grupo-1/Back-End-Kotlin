@@ -19,13 +19,9 @@ class SolicitarAjuste(
     @Column(nullable = false)
     val data: LocalDate,
 
-    val horaEntrada: Time? = null,
-    val horaAlmoco: Time? = null,
-    val horaVoltaAlmoco: Time? = null,
-    val horaSaida: Time? = null,
-
     @Column(nullable = false)
-    val motivo: String,
+    val justificativa: String,
+    val observacao: String? = null,
 
     var status: StatusSolicitacao = StatusSolicitacao.PENDENTE,
 
