@@ -12,4 +12,6 @@ interface ApontamentoHorasRepository : JpaRepository<ApontamentoHoras, Long> {
 
     fun findByProjetoInAndDataBetween(projetos: List<Projeto>, dataInicio: LocalDate, dataFim: LocalDate): List<ApontamentoHoras>
 
+    fun findApontamentosFaltantesByProjetoInAndDataBetween(projetos: List<Projeto>, dataInicio: LocalDate, dataFim: LocalDate): List<ApontamentoHoras>
+
 }

@@ -14,6 +14,7 @@ import com.trackpoint.demo.Repository.PontosRepository
 import com.trackpoint.demo.Repository.ProjetoRepository
 import com.trackpoint.demo.Repository.UsuariosRepository
 import org.springframework.stereotype.Service
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -144,6 +145,49 @@ class ApontamentoHorasService(
         // 3️⃣ Converter para DTO e retornar
         return apontamentos.map { ApontamentoHorasResponseDTO.fromEntity(it)!! }
     }
+
+    fun calcularTotalHorasFaltantesPorGerenteEPeriodo(
+        gerenteId: Int,
+        dataInicio: String,
+        dataFim: String
+    ): Double {
+        val inicio = LocalDate.parse(dataInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        val fim = LocalDate.parse(dataFim, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+
+        // 1️⃣ Buscar todos os projetos do gerente
+        val projetos = projetoRepository.findByGerenteIdInList(gerenteId)
+        if (projetos.isEmpty()) {
+            throw ProjetoNaoEncontradoException("Nenhum projeto encontrado para o gerente com id: $gerenteId")
+        }
+
+        // 2️⃣ Buscar todos os apontamentos existentes nesse período
+        val apontamentos = repository.findByProjetoInAndDataBetween(projetos, inicio, fim)
+
+        // 3️⃣ Obter todos os funcionários dos projetos
+        val funcionarios = projetos.flatMap { it.usuarios }.distinctBy { it.id }
+
+        var totalHorasFaltantes = 0.0
+
+        for (funcionario in funcionarios) {
+            // 4️⃣ Calcular dias úteis do período
+            val diasPeriodo = inicio.datesUntil(fim.plusDays(1))
+                .filter { it.dayOfWeek != DayOfWeek.SATURDAY && it.dayOfWeek != DayOfWeek.SUNDAY }
+                .toList()
+
+            // 5️⃣ Filtrar apontamentos do funcionário
+            val apontamentosFuncionario = apontamentos.filter { it.usuario.id == funcionario.id }
+
+            // 6️⃣ Identificar dias sem apontamento
+            val diasComApontamento = apontamentosFuncionario.map { it.data }.toSet()
+            val diasFaltantes = diasPeriodo.filter { it !in diasComApontamento }
+
+            // 7️⃣ Somar horas faltantes (ex: 8h por dia)
+            totalHorasFaltantes += diasFaltantes.size * 8.0
+        }
+
+        return totalHorasFaltantes
+    }
+
 
 }
 

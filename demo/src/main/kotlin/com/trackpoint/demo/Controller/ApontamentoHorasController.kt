@@ -41,4 +41,16 @@ class ApontamentoHorasController (private val apontamentoHorasService: Apontamen
         val apontamentos = apontamentoHorasService.listarApontamentosPorGerenteData(gerenteId, dataInicio, dataFim)
         return ResponseEntity.ok(apontamentos)
     }
+
+    @GetMapping("/gerente/{gerenteId}/horas-faltantes")
+    fun calcularHorasFaltantesPorGerenteEPeriodo(
+        @PathVariable gerenteId: Int,
+        @RequestParam dataInicio: String,
+        @RequestParam dataFim: String
+    ): ResponseEntity<Double> {
+        val totalHorasFaltantes = apontamentoHorasService
+            .calcularTotalHorasFaltantesPorGerenteEPeriodo(gerenteId, dataInicio, dataFim)
+        return ResponseEntity.ok(totalHorasFaltantes)
+    }
+
 }
