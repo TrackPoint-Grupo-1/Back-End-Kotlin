@@ -22,79 +22,83 @@ class HorasExtrasScheduler(
 
     private val limiteMinimoHorasExtras = Duration.ofMinutes(15) // só gera se exceder 15 minutos
 
-    @Transactional
     //@Scheduled(cron = "0 50 23 * * *") // todos os dias às 23:50
-    @Scheduled(fixedRate = 10000) // a cada 30 segundos (30000 ms)
+    @Scheduled(fixedRate = 10000) // a cada 10 segundos
+    @Transactional
     fun verificarHorasExtras() {
-        println("""
-            ---------------------------------------------------------------------------------------------------------------------------------------
-            ---------------------------------------------------------------------------------------------------------------------------------------
-            ---------------------------------------------------------------------------------------------------------------------------------------
-            ---------------------------------------------------------------------------------------------------------------------------------------
-            ---------------------------------------------------------------------------------------------------------------------------------------
-        """.trimIndent())
+        println("Iniciando varredura de horas extras do mês...")
+
         val hoje = LocalDate.now()
-        val inicioDoDia = hoje.atStartOfDay()
-        val fimDoDia = hoje.atTime(23, 59, 59)
+        val primeiroDiaDoMes = hoje.withDayOfMonth(1)
 
-        // Busca todos pontos do dia
-        val pontosDoDia = pontosRepository.findByHorarioBetween(inicioDoDia, fimDoDia)
+        // percorre todos os dias do mês até hoje
+        var dia = primeiroDiaDoMes
+        while (!dia.isAfter(hoje)) {
 
-        // Agrupa pontos por usuário e turno
-        pontosDoDia
-            .groupBy { it.usuario to it.turno }
-            .forEach { (usuarioTurno, pontosTurno) ->
-                val (usuario, turno) = usuarioTurno
+            val inicioDoDia = dia.atStartOfDay()
+            val fimDoDia = dia.atTime(23, 59, 59)
 
-                val entrada = pontosTurno.minByOrNull { it.horario } // primeiro horário do turno
-                val saida = pontosTurno.maxByOrNull { it.horario }   // último horário do turno
+            // Busca todos pontos do dia
+            val pontosDoDia = pontosRepository.findByHorarioBetween(inicioDoDia, fimDoDia)
 
-                // Se não tiver saída ainda, não calcula nada
-                if (entrada == null || saida == null || entrada == saida) return@forEach
+            // Agrupa pontos por usuário e turno
+            pontosDoDia
+                .groupBy { it.usuario to it.turno }
+                .forEach { (usuarioTurno, pontosTurno) ->
+                    val (usuario, turno) = usuarioTurno
 
-                val horarioEntrada = entrada.horario.toLocalTime()
-                val horarioSaida = saida.horario.toLocalTime()
+                    val entrada = pontosTurno.minByOrNull { it.horario }
+                    val saida = pontosTurno.maxByOrNull { it.horario }
 
-                // ✅ Calcula fim da jornada incluindo tempo de almoço de forma segura
-                val fimJornada = calcularJornadaComAlmoco(usuario, turno, entrada.horario, saida.horario)
+                    if (entrada == null || saida == null || entrada == saida) return@forEach
 
-                // 1️⃣ Marcar horas extras solicitadas como feitas
-                val horasExtrasSolicitadas = horasExtrasRepository.findByUsuarioAndData(usuario, hoje)
-                horasExtrasSolicitadas.forEach { horaExtra ->
-                    if (!horaExtra.foiFeita && horarioSaida >= horaExtra.horasAte) {
-                        horaExtra.foiFeita = true
-                        horasExtrasRepository.save(horaExtra)
+                    val horarioEntrada = entrada.horario.toLocalTime()
+                    val horarioSaida = saida.horario.toLocalTime()
+
+                    // calcula jornada real
+                    val fimJornada = calcularJornadaComAlmoco(usuario, turno, entrada.horario, saida.horario)
+
+                    // --- 1) marcar horas extras solicitadas como feitas ---
+                    val horasExtrasSolicitadas = horasExtrasRepository.findByUsuarioAndData(usuario, dia)
+                    horasExtrasSolicitadas.forEach { horaExtra ->
+                        if (!horaExtra.foiFeita && horarioSaida >= horaExtra.horasAte) {
+                            horaExtra.foiFeita = true
+                            horasExtrasRepository.save(horaExtra)
+                        }
                     }
-                }
 
-                // 2️⃣ Gerar hora extra não solicitada
-                if (saida.horario > fimJornada) {
-                    val duracaoExcedente = Duration.between(fimJornada, saida.horario)
-                    if (duracaoExcedente >= limiteMinimoHorasExtras) {
-                        val jaExiste = horasExtrasRepository.findByUsuarioAndDataAndHorasDeAndHorasAte(
-                            usuario,
-                            hoje,
-                            fimJornada.toLocalTime(),
-                            horarioSaida
-                        ).isNotEmpty()
+                    // --- 2) gerar horas extras não solicitadas ---
+                    if (saida.horario > fimJornada) {
+                        val duracaoExcedente = Duration.between(fimJornada, saida.horario)
+                        if (duracaoExcedente >= limiteMinimoHorasExtras) {
 
-                        if (!jaExiste) {
-                            val novaHoraExtra = SolicitacaoHorasExtras(
-                                usuario = usuario,
-                                projeto = null,
-                                data = hoje,
-                                horasDe = fimJornada.toLocalTime(),
-                                horasAte = horarioSaida,
-                                justificativa = "Hora extra não solicitada",
-                                observacao = "Gerada automaticamente pelo sistema com base na jornada",
-                                foiSolicitada = false,
-                                turno = turno // mantém UUID do turno
-                            )
-                            horasExtrasRepository.save(novaHoraExtra)
+                            val jaExiste = horasExtrasRepository.findByUsuarioAndDataAndHorasDeAndHorasAte(
+                                usuario,
+                                dia,
+                                fimJornada.toLocalTime(),
+                                horarioSaida
+                            ).isNotEmpty()
+
+                            if (!jaExiste) {
+                                horasExtrasRepository.save(
+                                    SolicitacaoHorasExtras(
+                                        usuario = usuario,
+                                        projeto = null,
+                                        data = dia,
+                                        horasDe = fimJornada.toLocalTime(),
+                                        horasAte = horarioSaida,
+                                        justificativa = "Hora extra não solicitada",
+                                        observacao = "Gerada automaticamente pelo sistema",
+                                        foiSolicitada = false,
+                                        turno = turno
+                                    )
+                                )
+                            }
                         }
                     }
                 }
-            }
+            dia = dia.plusDays(1)
+        }
     }
 
     /**
@@ -107,6 +111,7 @@ class HorasExtrasScheduler(
         horarioInicio: LocalDateTime,
         horarioSaida: LocalDateTime
     ): LocalDateTime {
+
         // Busca todos os pontos do turno
         val pontosDoTurno = pontosRepository.findByUsuarioAndHorarioBetweenOrderByHorarioAsc(
             usuario,
@@ -136,8 +141,11 @@ class HorasExtrasScheduler(
         }
 
         // Retorna fim da jornada = entrada + jornada + tempo de almoço
-        return horarioInicio.plusHours(usuario.jornada.toLong()).plus(duracaoAlmoco)
+        return horarioInicio
+            .plusHours(usuario.jornada.toLong())
+            .plus(duracaoAlmoco)
     }
+
 }
 
 
