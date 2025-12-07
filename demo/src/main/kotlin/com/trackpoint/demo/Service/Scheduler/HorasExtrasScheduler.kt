@@ -9,6 +9,7 @@ import com.trackpoint.demo.Repository.SolicitarHorasExtrasRepository
 import jakarta.transaction.Transactional
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.LocalDate
+import java.time.YearMonth
 
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -26,14 +27,19 @@ class HorasExtrasScheduler(
     @Scheduled(fixedRate = 10000) // a cada 10 segundos
     @Transactional
     fun verificarHorasExtras() {
-        println("Iniciando varredura de horas extras do mês...")
-
         val hoje = LocalDate.now()
-        val primeiroDiaDoMes = hoje.withDayOfMonth(1)
+        val anoMes = YearMonth.from(hoje)
+        val inicioMes = anoMes.atDay(1)
+        val fimMes = anoMes.atEndOfMonth()
+        processarEntreDatas(inicioMes, fimMes)
+    }
 
-        // percorre todos os dias do mês até hoje
-        var dia = primeiroDiaDoMes
-        while (!dia.isAfter(hoje)) {
+    @Transactional
+    fun processarEntreDatas(inicio: LocalDate, fim: LocalDate) {
+        println("Processando horas extras de ${inicio} até ${fim}...")
+
+        var dia = inicio
+        while (!dia.isAfter(fim)) {
 
             val inicioDoDia = dia.atStartOfDay()
             val fimDoDia = dia.atTime(23, 59, 59)
@@ -58,6 +64,13 @@ class HorasExtrasScheduler(
                     // calcula jornada real
                     val fimJornada = calcularJornadaComAlmoco(usuario, turno, entrada.horario, saida.horario)
 
+                    // Logs de diagnóstico do cálculo
+                    println(
+                        "[HorasExtras] usuario=${usuario.id} nome=${usuario.nome} dia=${dia} " +
+                        "entrada=${entrada.horario} saida=${saida.horario} jornada=${usuario.jornada}h " +
+                        "fimJornada=${fimJornada} excedenteMin=${java.time.Duration.between(fimJornada, saida.horario).toMinutes()}"
+                    )
+
                     // --- 1) marcar horas extras solicitadas como feitas ---
                     val horasExtrasSolicitadas = horasExtrasRepository.findByUsuarioAndData(usuario, dia)
                     horasExtrasSolicitadas.forEach { horaExtra ->
@@ -71,6 +84,7 @@ class HorasExtrasScheduler(
                     if (saida.horario > fimJornada) {
                         val duracaoExcedente = Duration.between(fimJornada, saida.horario)
                         if (duracaoExcedente >= limiteMinimoHorasExtras) {
+                            println("[HorasExtras] Excedente >= ${limiteMinimoHorasExtras.toMinutes()}min; gerando não solicitada para usuario=${usuario.id} dia=${dia}")
 
                             val jaExiste = horasExtrasRepository.findByUsuarioAndDataAndHorasDeAndHorasAte(
                                 usuario,
@@ -80,6 +94,7 @@ class HorasExtrasScheduler(
                             ).isNotEmpty()
 
                             if (!jaExiste) {
+                                println("[HorasExtras] Não existe registro igual; salvando hora extra não solicitada usuario=${usuario.id} turno=${turno} de=${fimJornada.toLocalTime()} até=${horarioSaida}")
                                 horasExtrasRepository.save(
                                     SolicitacaoHorasExtras(
                                         usuario = usuario,
@@ -90,11 +105,20 @@ class HorasExtrasScheduler(
                                         justificativa = "Hora extra não solicitada",
                                         observacao = "Gerada automaticamente pelo sistema",
                                         foiSolicitada = false,
+                                        foiFeita = true, 
                                         turno = turno
                                     )
                                 )
+                            } else {
+                                println("[HorasExtras] Já existe hora extra registrada para usuario=${usuario.id} dia=${dia} de=${fimJornada.toLocalTime()} até=${horarioSaida}")
                             }
                         }
+                        else {
+                            println("[HorasExtras] Excedente < ${limiteMinimoHorasExtras.toMinutes()}min; não gera (usuario=${usuario.id} dia=${dia})")
+                        }
+                    }
+                    else {
+                        println("[HorasExtras] Saída não excede fim da jornada (usuario=${usuario.id} dia=${dia})")
                     }
                 }
             dia = dia.plusDays(1)
